@@ -93,7 +93,7 @@ export interface PlayerBrief {
   elo: number;
 }
 
-export type Variant = "chess" | "xiangqi" | "caro" | "jungle";
+export type Variant = "chess" | "xiangqi" | "caro" | "jungle" | "oanquan";
 
 export interface GameSummary {
   id: string;
@@ -148,6 +148,11 @@ export interface PublicUser {
   jg_wins: number;
   jg_losses: number;
   jg_draws: number;
+  oq_elo: number;
+  oq_games_played: number;
+  oq_wins: number;
+  oq_losses: number;
+  oq_draws: number;
   created_at: string;
 }
 

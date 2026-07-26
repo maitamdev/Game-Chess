@@ -58,6 +58,20 @@ const games = [
       { href: "/jungle/local", label: "Hai người một máy" },
     ],
   },
+  {
+    href: "/oanquan",
+    guide: "/oanquan/guide",
+    title: "Ô Ăn Quan",
+    glyph: "🌾",
+    serif: false,
+    description:
+      "Rải sỏi quanh 10 ô dân và 2 ô quan — ăn cách ô, vay nợ rải lại, hết quan tàn dân đếm điểm.",
+    modes: [
+      { href: "/oanquan/online", label: "Đấu online" },
+      { href: "/oanquan/computer", label: "Đấu với máy" },
+      { href: "/oanquan/local", label: "Hai người một máy" },
+    ],
+  },
 ];
 
 export default function HomePage() {
@@ -136,6 +150,7 @@ export default function HomePage() {
         <MiniLeaderboard variant="xiangqi" title="Xếp hạng cờ tướng" />
         <MiniLeaderboard variant="caro" title="Xếp hạng caro" />
         <MiniLeaderboard variant="jungle" title="Xếp hạng cờ thú" />
+        <MiniLeaderboard variant="oanquan" title="Xếp hạng ô ăn quan" />
       </div>
     </div>
   );

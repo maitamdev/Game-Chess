@@ -21,7 +21,7 @@ from app.ws.game_session import create_session, sessions, user_variant_stats
 from app.ws.manager import Connection
 
 VALID_TIME_CONTROLS = {"3+2", "5+0", "10+0", "15+10"}
-VALID_VARIANTS = {"chess", "xiangqi", "caro", "jungle"}
+VALID_VARIANTS = {"chess", "xiangqi", "caro", "jungle", "oanquan"}
 
 
 @dataclass

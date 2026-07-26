@@ -88,7 +88,7 @@ async def user_games(
 async def rating_history(
     username: str,
     db: DbDep,
-    variant: Literal["chess", "xiangqi", "caro", "jungle"] = Query("chess"),
+    variant: Literal["chess", "xiangqi", "caro", "jungle", "oanquan"] = Query("chess"),
 ) -> list[RatingPoint]:
     user = await _get_user_or_404(db, username)
     rows = (

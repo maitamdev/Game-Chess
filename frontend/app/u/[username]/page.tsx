@@ -64,7 +64,7 @@ export default function ProfilePage() {
   const params = useParams<{ username: string }>();
   const username = decodeURIComponent(params.username);
   const [chartVariant, setChartVariant] = useState<
-    "chess" | "xiangqi" | "caro" | "jungle"
+    "chess" | "xiangqi" | "caro" | "jungle" | "oanquan"
   >("chess");
 
   const { data: profile, isError } = useQuery({
@@ -160,11 +160,22 @@ export default function ProfilePage() {
             </p>
           </div>
           <div>
+            <p className="font-[family-name:var(--font-mono)] text-xl text-brass">
+              🌾 {profile.oq_elo}
+            </p>
+            <p className="text-xs text-muted">
+              Elo ô ăn quan ·{" "}
+              <span className="text-sage">{profile.oq_wins}</span>/
+              <span className="text-rust">{profile.oq_losses}</span>/{profile.oq_draws}
+            </p>
+          </div>
+          <div>
             <p className="font-[family-name:var(--font-mono)] text-xl">
               {profile.games_played +
                 profile.xq_games_played +
                 profile.caro_games_played +
-                profile.jg_games_played}
+                profile.jg_games_played +
+                profile.oq_games_played}
             </p>
             <p className="text-xs text-muted">Tổng số ván</p>
           </div>
@@ -174,7 +185,7 @@ export default function ProfilePage() {
       <div className="mt-10 flex items-center justify-between">
         <h2 className="text-sm font-medium text-muted">Elo theo thời gian</h2>
         <div className="flex gap-1">
-          {(["chess", "xiangqi", "caro", "jungle"] as const).map((v) => (
+          {(["chess", "xiangqi", "caro", "jungle", "oanquan"] as const).map((v) => (
             <button
               key={v}
               type="button"
@@ -191,7 +202,9 @@ export default function ProfilePage() {
                   ? "Cờ tướng"
                   : v === "caro"
                     ? "Caro"
-                    : "Cờ thú"}
+                    : v === "jungle"
+                      ? "Cờ thú"
+                      : "Ô ăn quan"}
             </button>
           ))}
         </div>
@@ -225,7 +238,9 @@ export default function ProfilePage() {
                         ? "Caro"
                         : g.variant === "jungle"
                           ? "Cờ thú"
-                          : "Cờ vua"
+                          : g.variant === "oanquan"
+                            ? "Ô ăn quan"
+                            : "Cờ vua"
                   }
                   style={
                     g.variant === "xiangqi"
@@ -239,7 +254,9 @@ export default function ProfilePage() {
                       ? "✕"
                       : g.variant === "jungle"
                         ? "🦁"
-                        : "♞"}
+                        : g.variant === "oanquan"
+                          ? "🌾"
+                          : "♞"}
                 </span>
                 <span className="min-w-0 flex-1 truncate">
                   {g.white.username}{" "}

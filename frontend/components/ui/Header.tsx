@@ -10,6 +10,7 @@ const NAV = [
   { href: "/xiangqi", label: "Cờ tướng" },
   { href: "/caro", label: "Caro" },
   { href: "/jungle", label: "Cờ thú" },
+  { href: "/oanquan", label: "Ô ăn quan" },
   { href: "/leaderboard", label: "Xếp hạng" },
 ];
 

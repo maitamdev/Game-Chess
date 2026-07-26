@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Hướng dẫn chơi — Kỳ Đài",
   description:
-    "Luật chơi và hướng dẫn thao tác cho cờ vua, cờ tướng, cờ caro và cờ thú trên Kỳ Đài.",
+    "Luật chơi và hướng dẫn thao tác cho cờ vua, cờ tướng, cờ caro, cờ thú và ô ăn quan trên Kỳ Đài.",
 };
 
 const guides = [
@@ -39,6 +39,14 @@ const guides = [
     serif: false,
     description:
       "Cấp bậc 8 con thú, Chuột ăn Voi, nhảy sông, bẫy và hang — luật đầy đủ của rừng xanh.",
+  },
+  {
+    href: "/oanquan/guide",
+    title: "Ô Ăn Quan",
+    glyph: "🌾",
+    serif: false,
+    description:
+      "Cách rải sỏi hai chiều, luật ăn cách ô và ăn chuỗi, vay nợ rải lại, tính điểm khi hết quan tàn dân.",
   },
 ];
 

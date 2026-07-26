@@ -39,6 +39,12 @@ class User(Base):
     jg_wins: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     jg_losses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     jg_draws: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # thống kê ô ăn quan
+    oq_elo: Mapped[int] = mapped_column(Integer, default=1200, nullable=False)
+    oq_games_played: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    oq_wins: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    oq_losses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    oq_draws: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

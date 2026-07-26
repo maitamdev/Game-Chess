@@ -26,6 +26,11 @@ export interface AuthUser {
   jg_wins: number;
   jg_losses: number;
   jg_draws: number;
+  oq_elo: number;
+  oq_games_played: number;
+  oq_wins: number;
+  oq_losses: number;
+  oq_draws: number;
 }
 
 interface AuthState {

@@ -47,6 +47,7 @@ async def _final_state_from_db(
         "xiangqi": "rheakaehr/9/1c5c1/s1s1s1s1s/9/9/S1S1S1S1S/1C5C1/9/RHEAKAEHR r 0 0",
         "caro": "0 x",
         "jungle": "t5l/1c3d1/e1w1p1r/7/7/7/R1P1W1E/1D3C1/L5T r 0",
+        "oanquan": "0,5,5,5,5,5,0,5,5,5,5,5 11 0.0.0 0.0.0 a 0",
     }
     start_fen = start_fens.get(game.variant, "")
     last = moves[-1] if moves else None

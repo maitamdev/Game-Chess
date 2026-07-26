@@ -22,6 +22,7 @@ from app.core.caro_rules import CaroGame
 from app.core.chess_rules import ChessGame
 from app.core.elo import elo_changes
 from app.core.jungle_rules import JungleGame
+from app.core.oanquan_rules import OanQuanGame
 from app.core.xiangqi_rules import XiangqiGame
 from app.db import SessionLocal
 from app.models import Game, Move, RatingHistory, User
@@ -41,6 +42,7 @@ VARIANT_FIELDS = {
         "caro_draws",
     ),
     "jungle": ("jg_elo", "jg_games_played", "jg_wins", "jg_losses", "jg_draws"),
+    "oanquan": ("oq_elo", "oq_games_played", "oq_wins", "oq_losses", "oq_draws"),
 }
 
 RULES_FACTORY = {
@@ -48,6 +50,7 @@ RULES_FACTORY = {
     "xiangqi": XiangqiGame,
     "caro": CaroGame,
     "jungle": JungleGame,
+    "oanquan": OanQuanGame,
 }
 
 
@@ -83,7 +86,7 @@ class GameSession:
     variant: str = "chess"
     initial_ms: int = 0
     increment_ms: int = 0
-    rules: ChessGame | XiangqiGame | CaroGame | JungleGame = field(
+    rules: ChessGame | XiangqiGame | CaroGame | JungleGame | OanQuanGame = field(
         default_factory=ChessGame
     )
     moves: list[dict[str, Any]] = field(default_factory=list)

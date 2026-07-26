@@ -10,7 +10,10 @@ function LeaderboardContent() {
   const params = useSearchParams();
   const fromUrl = params.get("variant");
   const initial: Variant =
-    fromUrl === "xiangqi" || fromUrl === "caro" || fromUrl === "jungle"
+    fromUrl === "xiangqi" ||
+    fromUrl === "caro" ||
+    fromUrl === "jungle" ||
+    fromUrl === "oanquan"
       ? fromUrl
       : "chess";
   const [variant, setVariant] = useState<Variant>(initial);
@@ -27,7 +30,9 @@ function LeaderboardContent() {
         ? u.xq_elo
         : variant === "caro"
           ? u.caro_elo
-          : u.jg_elo;
+          : variant === "oanquan"
+            ? u.oq_elo
+            : u.jg_elo;
   const stats = (u: PublicUser) =>
     variant === "chess"
       ? { games: u.games_played, w: u.wins, l: u.losses, d: u.draws }
@@ -40,7 +45,19 @@ function LeaderboardContent() {
               l: u.caro_losses,
               d: u.caro_draws,
             }
-          : { games: u.jg_games_played, w: u.jg_wins, l: u.jg_losses, d: u.jg_draws };
+          : variant === "oanquan"
+            ? {
+                games: u.oq_games_played,
+                w: u.oq_wins,
+                l: u.oq_losses,
+                d: u.oq_draws,
+              }
+            : {
+                games: u.jg_games_played,
+                w: u.jg_wins,
+                l: u.jg_losses,
+                d: u.jg_draws,
+              };
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -52,7 +69,7 @@ function LeaderboardContent() {
           <p className="mt-1 text-sm text-muted">Top 100 kỳ thủ theo Elo.</p>
         </div>
         <div className="flex gap-1">
-          {(["chess", "xiangqi", "caro", "jungle"] as const).map((v) => (
+          {(["chess", "xiangqi", "caro", "jungle", "oanquan"] as const).map((v) => (
             <button
               key={v}
               type="button"
@@ -69,7 +86,9 @@ function LeaderboardContent() {
                   ? "將 Cờ tướng"
                   : v === "caro"
                     ? "✕ Caro"
-                    : "🦁 Cờ thú"}
+                    : v === "jungle"
+                      ? "🦁 Cờ thú"
+                      : "🌾 Ô ăn quan"}
             </button>
           ))}
         </div>

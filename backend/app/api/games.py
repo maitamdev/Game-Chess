@@ -59,13 +59,14 @@ async def game_pgn(game_id: uuid.UUID, db: DbDep) -> PlainTextResponse:
 async def leaderboard(
     db: DbDep,
     limit: int = Query(100, ge=1, le=100),
-    variant: Literal["chess", "xiangqi", "caro", "jungle"] = Query("chess"),
+    variant: Literal["chess", "xiangqi", "caro", "jungle", "oanquan"] = Query("chess"),
 ) -> list[UserPublic]:
     order = {
         "chess": User.elo.desc(),
         "xiangqi": User.xq_elo.desc(),
         "caro": User.caro_elo.desc(),
         "jungle": User.jg_elo.desc(),
+        "oanquan": User.oq_elo.desc(),
     }[variant]
     rows = (
         await db.execute(select(User).order_by(order).limit(limit))

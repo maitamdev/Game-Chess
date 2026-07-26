@@ -53,7 +53,9 @@ export default function MiniLeaderboard({ variant, title }: MiniLeaderboardProps
                   ? u.xq_elo
                   : variant === "caro"
                     ? u.caro_elo
-                    : u.jg_elo}
+                    : variant === "jungle"
+                      ? u.jg_elo
+                      : u.oq_elo}
             </span>
           </Link>
         ))}

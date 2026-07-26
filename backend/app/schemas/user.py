@@ -29,6 +29,11 @@ class UserPublic(BaseModel):
     jg_wins: int
     jg_losses: int
     jg_draws: int
+    oq_elo: int
+    oq_games_played: int
+    oq_wins: int
+    oq_losses: int
+    oq_draws: int
     created_at: datetime
 
 
