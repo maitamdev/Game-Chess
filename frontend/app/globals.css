@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* ===== Design tokens — mục 10 ===== */
+:root {
+  --ink: #10141c; /* nền trang */
+  --slate: #1a2029; /* panel, thẻ */
+  --line: #2a323e; /* viền, đường kẻ */
+  --boxwood: #e9dcc0; /* ô sáng bàn cờ */
+  --walnut: #6e4f35; /* ô tối bàn cờ */
+  --brass: #c8a44a; /* nước vừa đi, đồng hồ đang chạy, nhấn mạnh */
+  --sage: #7e9e7a; /* chấm nước hợp lệ */
+  --rust: #b4553c; /* chiếu, thua, cảnh báo */
+  --parchment: #f2ede3; /* chữ chính */
+  --muted: #8b93a1; /* chữ phụ */
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-slate: var(--slate);
+  --color-line: var(--line);
+  --color-boxwood: var(--boxwood);
+  --color-walnut: var(--walnut);
+  --color-brass: var(--brass);
+  --color-sage: var(--sage);
+  --color-rust: var(--rust);
+  --color-parchment: var(--parchment);
+  --color-muted: var(--muted);
+
+  --font-display: var(--font-fraunces), serif;
+  --font-sans: var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+
+  /* Thang cỡ chữ: 12 / 14 / 16 / 20 / 28 / 40 — không dùng cỡ khác */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 40px;
+
+  /* Bo góc: 6px nút và ô nhập, 8px bàn cờ, 10px thẻ và panel */
+  --radius-btn: 6px;
+  --radius-board: 8px;
+  --radius-card: 10px;
+}
+
+body {
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brass) 40%, transparent);
+}
+
+/* Viền hội tụ bàn phím */
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* Vua bị chiếu: nhấp nháy 2 lần */
+@keyframes check-blink {
+  0%, 100% { opacity: 0.45; }
+  25% { opacity: 0.1; }
+  50% { opacity: 0.45; }
+  75% { opacity: 0.1; }
+}
+.check-overlay {
+  background: var(--rust);
+  opacity: 0.45;
+  animation: check-blink 0.9s ease-in-out 1;
+}
+
+/* Chỉ báo "máy đang suy nghĩ" — ba chấm */
+@keyframes dot-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+.thinking-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--brass);
+  animation: dot-pulse 1.2s infinite ease-in-out;
+}
+.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Tôn trọng prefers-reduced-motion: tắt hết chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
