@@ -2,15 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import XiangqiBoard from "@/components/xiangqi/XiangqiBoard";
 import XqPlayerCard from "@/components/xiangqi/XqPlayerCard";
 import MoveList from "@/components/game/MoveList";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import SoundToggle from "@/components/ui/SoundToggle";
-import { api, type GameDetail } from "@/lib/api";
-import { getGameSocket, type SocketStatus } from "@/lib/ws";
+import { useOnlineGame } from "@/lib/online/useOnlineGame";
 import { Xiangqi, type XqColor, type XqMove } from "@/lib/xiangqi/rules";
 import { trackXqPieces } from "@/lib/xiangqi/tracker";
 import {
@@ -19,85 +17,56 @@ import {
   xqResultTitle,
   XQ_TERMINATION_LABELS,
 } from "@/lib/xiangqi/labels";
-import { playSound } from "@/lib/sounds";
 import { useAuthStore } from "@/stores/authStore";
-
-interface ServerTimes {
-  white: number; // Đỏ
-  black: number;
-  at: number;
-  ply: number;
-}
-
-interface OnlineResult {
-  winner: XqColor | null;
-  termination: string;
-  raw: string;
-  eloChange: number;
-  newElo: number;
-}
-
-/** server SAN = chữ Hán + uci, ví dụ "炮b2e2" → uci 4 ký tự cuối */
-function uciFromSan(san: string): string {
-  return san.slice(-4);
-}
 
 export default function XiangqiOnlineGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = params.gameId;
   const router = useRouter();
-  const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   const accessToken = useAuthStore((s) => s.accessToken);
 
-  const { data: detail } = useQuery({
-    queryKey: ["game", gameId],
-    queryFn: () => api<GameDetail>(`/api/games/${gameId}`),
-    enabled: !!gameId,
-  });
+  const {
+    state,
+    notFound,
+    connectionLost,
+    myColor: onlineColor,
+    confirmedUcis,
+    displayUcis,
+    pending,
+    displayTimes,
+    serverTurn,
+    drawOfferFromOpponent,
+    oppSecondsLeft,
+    result,
+    sendMove,
+    resign,
+    offerDraw,
+    respondDraw,
+  } = useOnlineGame(gameId ?? null);
 
-  const [sans, setSans] = useState<string[] | null>(null);
-  const [pending, setPending] = useState<{ san: string; ply: number } | null>(null);
-  const [times, setTimes] = useState<ServerTimes | null>(null);
-  const [result, setResult] = useState<OnlineResult | null>(null);
-  const [drawOffer, setDrawOffer] = useState<string | null>(null);
-  const [oppDeadline, setOppDeadline] = useState<number | null>(null);
-  const [viewOnly, setViewOnly] = useState(false);
-  const [socketStatus, setSocketStatus] = useState<SocketStatus>("closed");
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const [modalDismissed, setModalDismissed] = useState(false);
   const [confirmResign, setConfirmResign] = useState(false);
-  const [, setClockTick] = useState(0);
-
-  const sansRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (hydrated && !accessToken) router.replace("/login?next=/xiangqi/online");
   }, [hydrated, accessToken, router]);
 
-  // Đỏ = white phía server
-  const myColor: XqColor | null = useMemo(() => {
-    if (!detail || !user) return null;
-    if (detail.white.id === user.id) return "r";
-    if (detail.black.id === user.id) return "b";
-    return null;
-  }, [detail, user]);
-
-  const displaySans = useMemo(() => {
-    const base = sans ?? [];
-    return pending && pending.ply === base.length + 1 ? [...base, pending.san] : base;
-  }, [sans, pending]);
+  // server 'white' = Đỏ (r, đi trước), 'black' = Đen (b)
+  const myColor: XqColor | null =
+    onlineColor === "white" ? "r" : onlineColor === "black" ? "b" : null;
 
   const { verboseMoves, liveGame } = useMemo(() => {
     const game = new Xiangqi();
     const moves: XqMove[] = [];
-    for (const san of displaySans) {
-      const mv = game.move(uciFromSan(san));
+    for (const uci of displayUcis) {
+      const mv = game.move(uci);
       if (!mv) break;
       moves.push(mv);
     }
     return { verboseMoves: moves, liveGame: game };
-  }, [displaySans]);
+  }, [displayUcis]);
 
   const isLive = viewIndex === null;
   const shownIndex = viewIndex ?? verboseMoves.length;
@@ -124,140 +93,23 @@ export default function XiangqiOnlineGamePage() {
     return null;
   }, [verboseMoves, shownIndex]);
 
-  sansRef.current = sans ?? [];
-
-  const sendMove = useCallback(
+  const handleMove = useCallback(
     (from: string, to: string) => {
-      const base = sansRef.current;
       const game = new Xiangqi();
-      for (const san of base) game.move(uciFromSan(san));
+      for (const uci of confirmedUcis ?? []) game.move(uci);
       const mv = game.move({ from, to });
       if (!mv) return;
-      const ply = base.length + 1;
-      setPending({ san: mv.san, ply });
-      getGameSocket().send({ type: "move", game_id: gameId, uci: mv.uci, ply });
+      sendMove(mv.uci);
       playXqMoveSound(!!mv.captured, game.inCheck(), false);
     },
-    [gameId],
+    [confirmedUcis, sendMove],
   );
 
-  useEffect(() => {
-    const socket = getGameSocket();
-    socket.connect();
-
-    const offStatus = socket.onStatus((status) => {
-      setSocketStatus(status);
-      if (status === "open") {
-        // sync luôn thăng kết nối này thành tab chơi — reset cờ chỉ-xem
-        setViewOnly(false);
-        socket.send({ type: "sync", game_id: gameId });
-      }
-    });
-
-    const offMsg = socket.onMessage((raw) => {
-      const msg = raw as Record<string, unknown> & { type: string };
-      if (msg.game_id !== undefined && msg.game_id !== gameId) return;
-
-      switch (msg.type) {
-        case "game_state": {
-          const st = msg as unknown as {
-            moves: string[];
-            white_time_ms: number;
-            black_time_ms: number;
-            ply: number;
-          };
-          setSans(st.moves);
-          setPending(null);
-          setTimes({
-            white: st.white_time_ms,
-            black: st.black_time_ms,
-            at: performance.now(),
-            ply: st.ply,
-          });
-          break;
-        }
-        case "move_made": {
-          const mv = msg as unknown as {
-            san: string;
-            ply: number;
-            white_time_ms: number;
-            black_time_ms: number;
-            check: boolean;
-          };
-          if (mv.ply > sansRef.current.length + 1) {
-            socket.send({ type: "sync", game_id: gameId });
-          } else {
-            setSans((prev) => {
-              const base = prev ?? [];
-              return mv.ply === base.length + 1 ? [...base, mv.san] : base;
-            });
-          }
-          setPending((p) => (p && p.ply <= mv.ply ? null : p));
-          setTimes({
-            white: mv.white_time_ms,
-            black: mv.black_time_ms,
-            at: performance.now(),
-            ply: mv.ply,
-          });
-          break;
-        }
-        case "illegal_move":
-          setPending(null);
-          if (msg.reason === "view_only") setViewOnly(true);
-          socket.send({ type: "sync", game_id: gameId });
-          break;
-        case "game_over": {
-          const over = msg as unknown as {
-            result: string;
-            termination: string;
-            elo_change: number;
-            new_elo: number;
-          };
-          setResult({
-            winner:
-              over.result === "white" ? "r" : over.result === "black" ? "b" : null,
-            termination: over.termination,
-            raw: over.result,
-            eloChange: over.elo_change,
-            newElo: over.new_elo,
-          });
-          setDrawOffer(null);
-          setOppDeadline(null);
-          playSound("game-end");
-          // bỏ qua game_over phát lại từ CSDL (mở lại ván cũ) — không ghi đè Elo
-          const u = useAuthStore.getState().user;
-          if (u && over.new_elo > 0 && over.result !== "aborted" && !msg.replay) {
-            useAuthStore.setState({ user: { ...u, xq_elo: over.new_elo } });
-          }
-          break;
-        }
-        case "draw_offered":
-          setDrawOffer(String(msg.from ?? "Đối thủ"));
-          break;
-        case "opponent_disconnected":
-          setOppDeadline(Date.now() + Number(msg.reconnect_deadline_ms ?? 60000));
-          break;
-        case "opponent_reconnected":
-          setOppDeadline(null);
-          break;
-        case "view_only":
-          setViewOnly(true);
-          break;
-      }
-    });
-
-    socket.send({ type: "sync", game_id: gameId });
-    return () => {
-      offMsg();
-      offStatus();
-    };
-  }, [gameId]);
-
-  // âm thanh nước của đối thủ (nuốt lần sync đầu và các cú nhảy nhiều nước)
+  // âm thanh nước đối thủ (nuốt lần sync đầu và các cú nhảy nhiều nước)
   const prevLenRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!sans) return;
-    const len = sans.length;
+    if (confirmedUcis === null) return;
+    const len = confirmedUcis.length;
     const prev = prevLenRef.current;
     prevLenRef.current = len;
     if (prev === null || len !== prev + 1 || myColor === null) return;
@@ -266,40 +118,16 @@ export default function XiangqiOnlineGamePage() {
       const replay = new Xiangqi();
       let captured = false;
       for (let i = 0; i < len; i++) {
-        const mv = replay.move(uciFromSan(sans[i]));
+        const mv = replay.move(confirmedUcis[i]);
         if (i === len - 1) captured = !!mv?.captured;
       }
       playXqMoveSound(captured, replay.inCheck(), false);
     }
-  }, [sans, myColor]);
+  }, [confirmedUcis, myColor]);
 
-  // đồng hồ nội suy — bên đang chạy tính từ ply do server xác nhận
-  useEffect(() => {
-    if (result) return;
-    const t = setInterval(() => setClockTick((n) => n + 1), 100);
-    return () => clearInterval(t);
-  }, [result]);
-
-  const serverSideToMove: XqColor | null = times
-    ? times.ply % 2 === 0
-      ? "r"
-      : "b"
-    : null;
-
-  const displayTimes = useMemo(() => {
-    if (!times) return { r: 0, b: 0 };
-    let { white: r, black: b } = times;
-    if (times.ply >= 1 && !result) {
-      const elapsed = performance.now() - times.at;
-      if (serverSideToMove === "r") r -= elapsed;
-      else b -= elapsed;
-    }
-    return { r: Math.max(0, r), b: Math.max(0, b) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [times, serverSideToMove, result, Math.floor(performance.now() / 100)]);
-
+  const serverSideToMove: XqColor = serverTurn === "white" ? "r" : "b";
   const interactive =
-    !result && !viewOnly && myColor !== null && isLive && sans !== null;
+    !result && myColor !== null && isLive && confirmedUcis !== null;
 
   const legalMovesFrom = useCallback(
     (sq: string): XqMove[] => {
@@ -315,14 +143,18 @@ export default function XiangqiOnlineGamePage() {
   const boardWidth = { width: "min(66vh, 560px)", maxWidth: "calc(100vw - 32px)" };
 
   const card = (color: XqColor) => {
-    const player = color === "r" ? detail?.white : detail?.black;
+    const player = color === "r" ? state?.white : state?.black;
     return (
       <XqPlayerCard
         name={player?.username ?? "…"}
         subtitle={player ? `Elo ${player.elo}` : undefined}
         color={color}
-        clockMs={times ? (color === "r" ? displayTimes.r : displayTimes.b) : null}
-        clockActive={!result && (times?.ply ?? 0) >= 1 && serverSideToMove === color}
+        clockMs={
+          state ? (color === "r" ? displayTimes.white : displayTimes.black) : null
+        }
+        clockActive={
+          !result && (state?.ply ?? 0) >= 1 && serverSideToMove === color
+        }
         capturedChars={xqCapturedChars(
           verboseMoves,
           shownIndex,
@@ -332,38 +164,22 @@ export default function XiangqiOnlineGamePage() {
     );
   };
 
-  const oppSecondsLeft =
-    oppDeadline !== null
-      ? Math.max(0, Math.ceil((oppDeadline - Date.now()) / 1000))
-      : null;
+  if (notFound) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-12 text-center text-sm text-muted">
+        Không tìm thấy ván đấu.
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      {(socketStatus === "reconnecting" ||
-        viewOnly ||
-        oppSecondsLeft !== null ||
-        drawOffer) && (
+      {(connectionLost || oppSecondsLeft !== null || drawOfferFromOpponent) && (
         <div className="mb-4 flex flex-col gap-2">
-          {socketStatus === "reconnecting" && (
+          {connectionLost && (
             <p className="rounded-[6px] border border-rust bg-rust/10 px-4 py-2 text-sm text-rust">
               Mất kết nối — đang thử kết nối lại…
             </p>
-          )}
-          {viewOnly && (
-            <div className="flex items-center gap-3 rounded-[6px] border border-line bg-slate px-4 py-2 text-sm text-muted">
-              <span className="flex-1">
-                Ván này đang được điều khiển ở một tab khác — tab này chỉ xem.
-              </span>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setViewOnly(false);
-                  getGameSocket().send({ type: "sync", game_id: gameId });
-                }}
-              >
-                Chơi ở tab này
-              </Button>
-            </div>
           )}
           {oppSecondsLeft !== null && (
             <p className="rounded-[6px] border border-brass bg-brass/10 px-4 py-2 text-sm text-brass">
@@ -371,36 +187,13 @@ export default function XiangqiOnlineGamePage() {
               quay lại.
             </p>
           )}
-          {drawOffer && !result && (
+          {drawOfferFromOpponent && !result && (
             <div className="flex items-center gap-3 rounded-[6px] border border-line bg-slate px-4 py-2 text-sm">
-              <span>
-                <span className="text-brass">{drawOffer}</span> đề nghị hoà.
-              </span>
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => {
-                  getGameSocket().send({
-                    type: "respond_draw",
-                    game_id: gameId,
-                    accept: true,
-                  });
-                  setDrawOffer(null);
-                }}
-              >
+              <span>Đối thủ đề nghị hoà.</span>
+              <Button size="sm" variant="primary" onClick={() => respondDraw(true)}>
                 Đồng ý
               </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  getGameSocket().send({
-                    type: "respond_draw",
-                    game_id: gameId,
-                    accept: false,
-                  });
-                  setDrawOffer(null);
-                }}
-              >
+              <Button size="sm" onClick={() => respondDraw(false)}>
                 Từ chối
               </Button>
             </div>
@@ -418,7 +211,7 @@ export default function XiangqiOnlineGamePage() {
             interactive={interactive}
             movableColor={myColor}
             legalMovesFrom={legalMovesFrom}
-            onMove={sendMove}
+            onMove={handleMove}
             lastMove={lastMove}
             checkSquare={checkSquare}
           />
@@ -428,7 +221,7 @@ export default function XiangqiOnlineGamePage() {
         <aside className="flex w-full max-w-sm flex-col gap-3 lg:h-[min(73vh,620px)] lg:w-72 lg:self-center">
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-wrap gap-2">
-              {myColor && !result && !viewOnly && (
+              {myColor && !result && (
                 <>
                   <Button
                     size="sm"
@@ -439,18 +232,13 @@ export default function XiangqiOnlineGamePage() {
                         setTimeout(() => setConfirmResign(false), 3000);
                         return;
                       }
-                      getGameSocket().send({ type: "resign", game_id: gameId });
+                      resign();
                       setConfirmResign(false);
                     }}
                   >
                     {confirmResign ? "Chắc chắn?" : "⚑ Đầu hàng"}
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      getGameSocket().send({ type: "offer_draw", game_id: gameId })
-                    }
-                  >
+                  <Button size="sm" onClick={offerDraw}>
                     ½ Cầu hoà
                   </Button>
                 </>
@@ -475,10 +263,13 @@ export default function XiangqiOnlineGamePage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : result.winner === "r" ? "1–0" : "0–1"}
+              {result.raw === "white" ? "1–0" : result.raw === "black" ? "0–1" : "½–½"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
-              {xqResultTitle(result.winner, result.termination)}
+              {xqResultTitle(
+                result.raw === "white" ? "r" : result.raw === "black" ? "b" : null,
+                result.termination,
+              )}
             </h2>
             <p className="mt-1 text-sm text-muted">
               {XQ_TERMINATION_LABELS[result.termination] ?? result.termination}

@@ -62,7 +62,7 @@ export default function GuideIndexPage() {
           luật đặc biệt, kết cục ván đấu và thao tác trên bàn cờ.
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {guides.map((guide) => (
           <Link
             key={guide.href}
@@ -89,6 +89,25 @@ export default function GuideIndexPage() {
             <span className="mt-4 text-xs text-brass">Xem hướng dẫn →</span>
           </Link>
         ))}
+        <Link
+          href="/minigames"
+          className="group flex flex-col rounded-[10px] border border-dashed border-line p-6 transition-colors hover:border-brass"
+        >
+          <span
+            aria-hidden
+            className="text-2xl leading-none transition-transform duration-200 group-hover:-translate-y-0.5"
+          >
+            🕹️
+          </span>
+          <h2 className="mt-4 font-[family-name:var(--font-display)] text-lg font-medium">
+            Góc Giải Trí
+          </h2>
+          <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
+            2048, Dò mìn, Lật thẻ — mỗi trang minigame có sẵn mục “Cách chơi”
+            ngay bên dưới bàn chơi.
+          </p>
+          <span className="mt-4 text-xs text-brass">Vào chơi ngay →</span>
+        </Link>
       </div>
     </div>
   );

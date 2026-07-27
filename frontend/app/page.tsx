@@ -74,16 +74,37 @@ const games = [
   },
 ];
 
+const minigames = [
+  {
+    href: "/minigames/2048",
+    title: "2048",
+    glyph: "🎯",
+    description: "Trượt và hợp nhất — chạm mốc 2048.",
+  },
+  {
+    href: "/minigames/domin",
+    title: "Dò Mìn",
+    glyph: "💣",
+    description: "Mở bàn, cắm cờ, đừng nổ.",
+  },
+  {
+    href: "/minigames/latthe",
+    title: "Lật Thẻ",
+    glyph: "🎴",
+    description: "Tìm cặp giống nhau, ít lượt nhất.",
+  },
+];
+
 export default function HomePage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
       <div className="mb-12 max-w-2xl">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold leading-tight">
+        <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold leading-tight">
           Phòng đấu đã lên đèn.
         </h1>
         <p className="mt-3 text-base text-muted">
-          Chọn bàn cờ của bạn — cờ vua hay cờ tướng — và ngồi vào. Một đồng hồ
-          đang chờ được bấm.
+          Năm bàn cờ — cờ vua, cờ tướng, caro, cờ thú, ô ăn quan — và một góc
+          giải trí cho lúc chờ trận. Một đồng hồ đang chờ được bấm.
         </p>
         <Link
           href="/guide"
@@ -93,11 +114,11 @@ export default function HomePage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {games.map((game) => (
           <div
             key={game.href}
-            className="group flex flex-col rounded-[10px] border border-line bg-slate p-6 transition-colors hover:border-brass"
+            className="group flex flex-col rounded-[10px] border border-line bg-slate p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass hover:shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
           >
             <div className="flex items-center gap-3">
               <span
@@ -143,9 +164,54 @@ export default function HomePage() {
             </div>
           </div>
         ))}
+
+        {/* thẻ giới thiệu góc giải trí — lấp ô thứ 6 của lưới 3 cột */}
+        <div className="flex flex-col rounded-[10px] border border-dashed border-line bg-transparent p-6">
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="text-2xl leading-none">
+              🕹️
+            </span>
+            <Link href="/minigames" className="rounded-[6px]">
+              <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold transition-colors hover:text-brass">
+                Góc Giải Trí
+              </h2>
+            </Link>
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            Không cần đối thủ, không cần đăng nhập — vài phút xả hơi giữa hai
+            ván cờ.
+          </p>
+          <div className="mt-4 flex flex-1 flex-col gap-2">
+            {minigames.map((mg) => (
+              <Link
+                key={mg.href}
+                href={mg.href}
+                className="group/mg flex items-center gap-3 rounded-[8px] border border-line px-4 py-2.5 transition-colors hover:border-brass"
+              >
+                <span aria-hidden className="text-lg leading-none">
+                  {mg.glyph}
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-medium text-parchment transition-colors group-hover/mg:text-brass">
+                    {mg.title}
+                  </span>
+                  <span className="block text-xs text-muted">
+                    {mg.description}
+                  </span>
+                </span>
+                <span aria-hidden className="text-muted transition-colors group-hover/mg:text-brass">
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <h2 className="mt-14 font-[family-name:var(--font-display)] text-xl font-semibold">
+        Bảng xếp hạng
+      </h2>
+      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <MiniLeaderboard variant="chess" title="Xếp hạng cờ vua" />
         <MiniLeaderboard variant="xiangqi" title="Xếp hạng cờ tướng" />
         <MiniLeaderboard variant="caro" title="Xếp hạng caro" />

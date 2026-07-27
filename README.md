@@ -1,81 +1,74 @@
-# Kỳ Đài — Nền tảng chơi cờ trực tuyến
+# Kỳ Đài — Đấu trường cờ & game trí tuệ
 
-Bốn game — **Cờ Vua**, **Cờ Tướng**, **Cờ Caro 200×200** và **Cờ Thú** — mỗi
-game đủ ba chế độ:
+Một ứng dụng **Next.js duy nhất, deploy trọn gói lên Vercel** (không còn
+backend Python). Năm game đối kháng — **Cờ Vua**, **Cờ Tướng**, **Cờ Caro
+200×200**, **Cờ Thú**, **Ô Ăn Quan** — mỗi game đủ ba chế độ, cộng nhóm
+**minigame giải trí** (2048, Dò mìn, Lật thẻ):
 
-- **Đấu online** — ghép cặp tự động theo Elo (Elo riêng cho từng game), đồng hồ phía server, xếp hạng. Cần đăng nhập.
+- **Đấu online** — ghép cặp tự động theo Elo (Elo riêng từng game), server là
+  trọng tài duy nhất, xếp hạng + lịch sử Elo. Cần đăng nhập.
 - **Đấu với máy** — engine minimax chạy trong Web Worker, 5 mức độ. Không cần đăng nhập.
 - **Hai người một máy** — thay phiên trên cùng thiết bị, bàn cờ tự xoay. Không cần mạng.
 
-Luật cờ tướng, caro và cờ thú tự viết hai bản (TypeScript client + Python
-server) và kiểm chứng chéo bằng fuzz: cờ tướng perft khớp chuẩn (44 / 1 920 /
-79 666) + 200 ván ~20k thế khớp tuyệt đối; caro 300 ván 5-in-row khớp; cờ thú
-250 ván ~37k thế khớp (kèm spot-test chuột ăn voi, nhảy sông bị chuột chặn).
-Bàn caro 200×200 virtualized (kéo di chuyển, lăn chuột phóng to); bàn cờ thú
-có sông gợn sóng, bẫy khắc chéo, hang ⛩, đĩa thú kèm huy hiệu cấp.
+## Kiến trúc (một app Next.js)
+
+```
+frontend/
+  app/                trang UI + app/api/* (route handlers = backend TypeScript)
+    api/auth/         đăng ký / đăng nhập / refresh (JWT HS256, bcrypt)
+    api/users|games/  hồ sơ, lịch sử ván, rating-history, PGN, leaderboard
+    api/queue/        ghép cặp: join / leave / status (poll-driven, dải Elo ±100→±400)
+    api/live/         ván online: state / move / resign / draw
+  lib/server/         schema Drizzle (libSQL/Turso), auth, elo, live engine,
+                      rules adapters (trọng tài server dùng CHUNG bộ luật TS với client)
+  lib/online/         useOnlineGame — hook polling + đi nước lạc quan + đồng hồ nội suy
+  lib/{engine,xiangqi,caro,jungle,oanquan}/  luật + AI minimax từng game (Web Worker)
+  components/         bàn cờ từng game + UI dùng chung + minigames
+```
+
+**Online không cần WebSocket** (Vercel serverless không hỗ trợ): client poll
+`GET /api/live/:id/state` mỗi 1.5s (kiêm heartbeat hiện diện); đồng hồ, huỷ
+ván (30s/120s), xử thua rớt mạng (60s), hết giờ đều phán quyết *lazy* theo
+timestamp trong DB ngay khi có request — không cần tiến trình thường trực.
+Ghép cặp cũng poll-driven, không có vòng lặp nền.
+
+Luật cờ tướng / caro / cờ thú / ô ăn quan viết một lần bằng TypeScript và dùng
+cho **cả client lẫn server** (hết cảnh hai bản Python/TS); cờ vua dùng chess.js.
 
 ## Chạy trên máy này
 
-Cần **hai** tiến trình: backend (cổng 8000) và frontend (cổng 3000).
-
-### 1. Backend
-
-```bash
-cd backend
-.venv/Scripts/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-(Nếu chưa có `.venv`: `python -m venv .venv` rồi `.venv/Scripts/pip install -r requirements.txt`.)
-
-### 2. Frontend
-
 ```bash
 cd frontend
+npm install
+npm run db:push   # tạo schema vào SQLite ./local.db (chỉ lần đầu)
 npm run dev
 ```
 
 Mở http://localhost:3000. Muốn thử đấu online một mình: mở 2 cửa sổ trình duyệt
 (một cửa sổ ẩn danh để đăng nhập 2 tài khoản khác nhau), cùng bấm **Tìm trận**.
 
-## Cấu hình
+## Deploy lên Vercel (miễn phí)
 
-Backend đọc biến môi trường (hoặc `backend/.env`):
+1. Tạo database [Turso](https://turso.tech) (gói free):
+   `turso db create kydai` → lấy URL + token (`turso db show kydai --url`,
+   `turso db tokens create kydai`).
+2. Đẩy schema: chạy `npm run db:push` trong `frontend/` với
+   `DATABASE_URL=libsql://…` và `DATABASE_AUTH_TOKEN=…` trong môi trường.
+3. Import repo vào Vercel, **Root Directory = `frontend`**, đặt env:
 
-| Biến | Mặc định | Ghi chú |
-|---|---|---|
-| `DATABASE_URL` | `sqlite+aiosqlite:///./chess.db` | Sản xuất: `postgresql+asyncpg://user:pass@host/db` (bật `asyncpg` trong requirements.txt, chạy `alembic upgrade head`) |
-| `JWT_SECRET` | giá trị dev | **Bắt buộc đổi khi triển khai** |
-| `CORS_ORIGINS` | `["http://localhost:3000"]` | |
+| Biến | Ghi chú |
+|---|---|
+| `DATABASE_URL` | `libsql://<db>-<org>.turso.io` (local mặc định `file:./local.db`) |
+| `DATABASE_AUTH_TOKEN` | token Turso |
+| `JWT_SECRET` | chuỗi ngẫu nhiên dài — **bắt buộc đổi khi triển khai** |
 
-Frontend: `NEXT_PUBLIC_API_URL` (mặc định `http://localhost:8000`).
+Không cần cấu hình gì thêm — API routes deploy cùng frontend.
 
-## Khác biệt so với đặc tả gốc (do môi trường máy local)
+## Ghi chú kỹ thuật
 
-- **SQLite thay cho PostgreSQL 16** — cùng models SQLAlchemy 2.0 async; đổi
-  `DATABASE_URL` là chạy PostgreSQL, schema quản lý bằng Alembic (scaffold sẵn).
-- **Không dùng Redis** — hàng đợi ghép cặp + phiên ván giữ trong bộ nhớ, đủ cho
-  **một** tiến trình backend. Chạy nhiều tiến trình phải bổ sung Redis pub/sub
-  (điểm nối: `app/ws/manager.py` + `matchmaking.py`).
-- **Âm thanh `.wav` tự tổng hợp** trong `frontend/public/sounds/` (máy không có
-  bộ mã hoá MP3). Client tự ưu tiên `.mp3` nếu bạn thay file.
-- Thông điệp WebSocket mở rộng ngoài spec: `view_only` (2 tab cùng ván),
-  `server_time` trong `move_made`, kết quả `aborted` khi huỷ ván.
-
-## Cấu trúc
-
-```
-frontend/   Next.js 15 + TypeScript + Tailwind v4 + Zustand + TanStack Query
-  app/                /, /chess, /play/* (cờ vua), /xiangqi/* (cờ tướng),
-                      /game/[id] (xem lại), /u/[username], /leaderboard, /login, /register
-  components/board/   bàn cờ vua tự dựng (CSS Grid, kéo-thả + nhấp, premove, phong cấp tại ô)
-  components/xiangqi/ bàn cờ tướng (giao điểm 9×10, sông, cung, quân đĩa chữ Hán)
-  components/game/    đồng hồ, thẻ người chơi, biên bản, modal kết thúc (dùng chung)
-  lib/engine/         engine cờ vua: minimax + alpha-beta + quiescence (Web Worker)
-  lib/xiangqi/        luật cờ tướng + engine + worker riêng
-  lib/ws.ts           client WebSocket, tự kết nối lại (backoff ≤30s), ping 20s
-backend/    FastAPI + SQLAlchemy async + python-chess
-  app/api/            REST: auth (JWT), users, games, leaderboard (?variant=)
-  app/ws/             ghép cặp theo (game, thể thức), phiên ván + đồng hồ monotonic, Elo, PGN
-  app/core/           chess_rules (python-chess) + xiangqi_rules (tự viết) + elo + security
-  alembic/            migration cho PostgreSQL
-```
+- Elo: K = 40/20/10 theo số ván; thay đổi ghi vào `rating_history` từng variant.
+- Đề nghị hoà có hiệu lực tới khi bên nhận đi nước; nước đi lạc quan đối chiếu
+  bằng `ply` — server state luôn là chân lý.
+- Hết giờ mà đối thủ thiếu lực chiếu bí → hoà (cờ vua/cờ tướng/cờ thú).
+- Âm thanh `.wav` tự tổng hợp trong `frontend/public/sounds/`.
+- Minigame (2048, Dò mìn, Lật thẻ) chạy hoàn toàn client-side, kỷ lục lưu localStorage.

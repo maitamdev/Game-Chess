@@ -34,7 +34,9 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         mode === "login" ? { username, password } : { username, email, password };
       const res = await api<TokenResponse>(`/api/auth/${mode}`, { body });
       useAuthStore.getState().setAuth(res, res.user);
-      router.push(params.get("next") ?? "/");
+      // chỉ nhận đường dẫn nội bộ — "?next=https://evil" / "//evil" là open redirect
+      const next = params.get("next") ?? "/";
+      router.push(next.startsWith("/") && !next.startsWith("//") ? next : "/");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Không kết nối được máy chủ");
     } finally {

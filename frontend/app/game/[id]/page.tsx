@@ -29,6 +29,15 @@ import {
   jgResultTitle,
   JG_TERMINATION_LABELS,
 } from "@/lib/jungle/labels";
+import OanquanBoard from "@/components/oanquan/OanquanBoard";
+import OanquanPlayerCard from "@/components/oanquan/OanquanPlayerCard";
+import { OAnQuan, type OqColor, type OqMove } from "@/lib/oanquan/rules";
+import { oqBoardAt } from "@/lib/oanquan/tracker";
+import {
+  oqResultTitle,
+  oqSideName,
+  OQ_TERMINATION_LABELS,
+} from "@/lib/oanquan/labels";
 import { TERMINATION_LABELS, resultTitle, type Termination } from "@/lib/types";
 
 /** Đồ thị lợi thế: phân tích nhanh phía client bằng engine tương ứng. */
@@ -165,7 +174,9 @@ function ReviewHeader({
               ? "· Caro"
               : game.variant === "jungle"
                 ? "· Cờ thú"
-                : "· Cờ vua"}
+                : game.variant === "oanquan"
+                  ? "· Ô ăn quan"
+                  : "· Cờ vua"}
           </span>
         </h1>
         <p className="text-sm text-muted">
@@ -537,6 +548,84 @@ function JungleReview({ game }: { game: GameDetail }) {
   );
 }
 
+function OanquanReview({ game }: { game: GameDetail }) {
+  const [viewIndex, setViewIndex] = useState(0);
+  const initializedRef = useRef(false);
+
+  // Replay toàn ván từ uci; dữ liệu hỏng giữa chừng thì lấy được đến đâu hay đến đó
+  const verboseMoves = useMemo(() => {
+    try {
+      return new OAnQuan(game.moves.map((m) => m.uci)).historyMoves;
+    } catch {
+      const g = new OAnQuan();
+      const moves: OqMove[] = [];
+      for (const m of game.moves) {
+        const mv = g.move(m.uci);
+        if (!mv) break;
+        moves.push(mv);
+      }
+      return moves;
+    }
+  }, [game]);
+
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      setViewIndex(verboseMoves.length);
+    }
+  }, [verboseMoves.length]);
+
+  useArrowNav(verboseMoves.length, setViewIndex);
+
+  // Mỗi nước đổi nhiều ô nên dựng lại bàn tại thế đang xem bằng tracker
+  const board = useMemo(
+    () => oqBoardAt(verboseMoves, viewIndex),
+    [verboseMoves, viewIndex],
+  );
+  const lastMove = viewIndex > 0 ? verboseMoves[viewIndex - 1] : null;
+
+  const card = (color: OqColor) => {
+    const player = color === "a" ? game.white : game.black;
+    const eloBefore = color === "a" ? game.white_elo_before : game.black_elo_before;
+    return (
+      <OanquanPlayerCard
+        name={player.username}
+        subtitle={
+          eloBefore ? `${oqSideName(color)} · Elo ${eloBefore}` : oqSideName(color)
+        }
+        color={color}
+        clockMs={null}
+        clockActive={false}
+        store={color === "a" ? board.storeA : board.storeB}
+      />
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        {card("b")}
+        <OanquanBoard
+          dan={board.dan}
+          quanLeft={board.quanLeft}
+          quanRight={board.quanRight}
+          turn={board.turn}
+          interactive={false}
+          movableColor={null}
+          onMove={() => {}}
+          lastMove={lastMove}
+          hint={null}
+        />
+        {card("a")}
+      </div>
+      <aside className="flex w-full flex-col gap-3 lg:w-72">
+        <MoveList moves={verboseMoves} viewIndex={viewIndex} onSelect={setViewIndex} />
+        <p className="text-xs text-muted">Dùng phím ← → để tua từng nước.</p>
+      </aside>
+    </div>
+  );
+}
+
 export default function GameReviewPage() {
   const params = useParams<{ id: string }>();
   const { data: game, isLoading } = useQuery({
@@ -555,46 +644,61 @@ export default function GameReviewPage() {
   const isXq = game.variant === "xiangqi";
   const isCaro = game.variant === "caro";
   const isJungle = game.variant === "jungle";
+  const isOanquan = game.variant === "oanquan";
   const winnerRB =
     game.result === "white" ? "r" : game.result === "black" ? "b" : null;
   const titleText = !game.result
     ? "Đang diễn ra"
-    : isJungle
-      ? jgResultTitle(winnerRB as JgColor | null, game.termination ?? "agreement")
-      : isCaro
-        ? caroResultTitle(
-            game.result === "white" ? "x" : game.result === "black" ? "o" : null,
-            game.termination ?? "agreement",
-          )
-        : isXq
-          ? xqResultTitle(winnerRB, game.termination ?? "agreement")
-          : resultTitle({
-              winner:
-                game.result === "white"
-                  ? "white"
-                  : game.result === "black"
-                    ? "black"
-                    : null,
-              termination: (game.termination ?? "agreement") as Termination,
-            });
+    : isOanquan
+      ? oqResultTitle(
+          // white = Đỏ "a", black = Xanh "b"
+          game.result === "white" ? "a" : game.result === "black" ? "b" : null,
+          game.termination ?? "agreement",
+        )
+      : isJungle
+        ? jgResultTitle(winnerRB as JgColor | null, game.termination ?? "agreement")
+        : isCaro
+          ? caroResultTitle(
+              game.result === "white" ? "x" : game.result === "black" ? "o" : null,
+              game.termination ?? "agreement",
+            )
+          : isXq
+            ? xqResultTitle(winnerRB, game.termination ?? "agreement")
+            : resultTitle({
+                winner:
+                  game.result === "white"
+                    ? "white"
+                    : game.result === "black"
+                      ? "black"
+                      : null,
+                termination: (game.termination ?? "agreement") as Termination,
+              });
   const subtitleText = !game.result
     ? "…"
-    : isJungle
-      ? JG_TERMINATION_LABELS[game.termination ?? "agreement"] ?? game.termination ?? ""
-      : isCaro
-        ? CARO_TERMINATION_LABELS[game.termination ?? "agreement"] ??
+    : isOanquan
+      ? OQ_TERMINATION_LABELS[game.termination ?? "agreement"] ??
+        game.termination ??
+        ""
+      : isJungle
+        ? JG_TERMINATION_LABELS[game.termination ?? "agreement"] ??
           game.termination ??
           ""
-        : isXq
-          ? XQ_TERMINATION_LABELS[game.termination ?? "agreement"] ??
+        : isCaro
+          ? CARO_TERMINATION_LABELS[game.termination ?? "agreement"] ??
             game.termination ??
             ""
-          : TERMINATION_LABELS[(game.termination ?? "agreement") as Termination];
+          : isXq
+            ? XQ_TERMINATION_LABELS[game.termination ?? "agreement"] ??
+              game.termination ??
+              ""
+            : TERMINATION_LABELS[(game.termination ?? "agreement") as Termination];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       <ReviewHeader game={game} titleText={titleText} subtitleText={subtitleText} />
-      {isJungle ? (
+      {isOanquan ? (
+        <OanquanReview game={game} />
+      ) : isJungle ? (
         <JungleReview game={game} />
       ) : isCaro ? (
         <CaroReview game={game} />

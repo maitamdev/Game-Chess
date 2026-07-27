@@ -23,9 +23,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kỳ Đài — Cờ vua trực tuyến",
+  title: "Kỳ Đài — Đấu trường cờ & game trí tuệ",
   description:
-    "Chơi cờ vua trực tuyến: đấu xếp hạng, đấu với máy, hoặc hai người một máy.",
+    "Cờ vua, cờ tướng, cờ caro, cờ thú, ô ăn quan và minigame giải trí: đấu xếp hạng online, đấu với máy, hoặc hai người một máy.",
 };
 
 export default function RootLayout({

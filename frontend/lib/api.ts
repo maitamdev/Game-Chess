@@ -2,12 +2,9 @@
 
 import { useAuthStore } from "@/stores/authStore";
 
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-export const WS_URL =
-  process.env.NEXT_PUBLIC_WS_URL ??
-  API_URL.replace(/^http/, "ws").replace(/\/$/, "") + "/ws";
+// API chạy cùng origin (Next.js route handlers) — có thể trỏ đi nơi khác
+// qua NEXT_PUBLIC_API_URL khi cần.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
   constructor(
@@ -50,7 +47,11 @@ export async function refreshAccessToken(): Promise<string | null> {
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
     if (!res.ok) {
-      useAuthStore.getState().logout();
+      // chỉ đăng xuất khi refresh token THỰC SỰ bị từ chối — lỗi 5xx/mạng
+      // thoáng qua giữa ván không được phép huỷ phiên đăng nhập
+      if (res.status === 401 || res.status === 403) {
+        useAuthStore.getState().logout();
+      }
       return null;
     }
     const data = (await res.json()) as { access_token: string };

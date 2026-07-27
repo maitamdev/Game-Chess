@@ -5,22 +5,32 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.4",
     "@tanstack/react-query": "^5.80.0",
+    "bcryptjs": "^3.0.3",
     "chess.js": "^1.4.0",
+    "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.15.0",
+    "jose": "^6.2.4",
     "next": "^15.5.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "zod": "^4.4.3",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.8",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.0"
   }
