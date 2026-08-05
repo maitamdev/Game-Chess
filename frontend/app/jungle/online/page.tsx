@@ -1,17 +1,11 @@
-"use client";
+import RoomLobby from "@/components/online/RoomLobby";
 
-import QueuePanel from "@/components/online/QueuePanel";
-import { useAuthStore } from "@/stores/authStore";
-
-export default function JungleQueuePage() {
-  const user = useAuthStore((s) => s.user);
+export default function JungleRoomsPage() {
   return (
-    <QueuePanel
-      variant="jungle"
-      title="Cờ thú — đấu online"
-      eloLabel="Elo cờ thú"
-      eloValue={user?.jg_elo}
-      basePath="/jungle/online"
+    <RoomLobby
+      initialGame="jungle"
+      lockedGame
+      heading="Cờ thú online"
     />
   );
 }

@@ -1,16 +1,16 @@
 /**
- * Luật cờ thú (Jungle / Đấu thú kỳ) — bàn 7 cột (a–g) × 9 hàng (0–8),
+ * Luật cờ thú (Jungle / Đấu thú kỳ) - bàn 7 cột (a-g) × 9 hàng (0-8),
  * Đỏ ở dưới đi trước.
  *
  * Cấp thú: Voi 8, Sư tử 7, Hổ 6, Báo 5, Sói 4, Chó 3, Mèo 2, Chuột 1.
  * - Ăn được quân cấp ≤ mình; NGOẠI LỆ: Chuột ăn được Voi, Voi không ăn được Chuột.
- * - Sông: 2 vùng 2×3 (cột b–c và e–f, hàng 3–5). Chỉ Chuột được xuống nước.
+ * - Sông: 2 vùng 2×3 (cột b-c và e-f, hàng 3-5). Chỉ Chuột được xuống nước.
  * - Chuột dưới nước: không bị quân trên cạn ăn, không được ăn/bị ăn khi
- *   băng ranh giới nước–cạn; hai chuột cùng dưới nước ăn nhau bình thường.
+ *   băng ranh giới nước-cạn; hai chuột cùng dưới nước ăn nhau bình thường.
  * - Sư tử và Hổ nhảy thẳng qua sông (dọc hoặc ngang), bị chặn nếu có
  *   BẤT KỲ chuột nào (kể cả của mình) nằm trên đường nước.
  * - Bẫy: 3 ô quanh hang mỗi bên; quân ĐỊCH đứng trong bẫy của mình bị
- *   hạ cấp về 0 — quân nào của mình cũng ăn được.
+ *   hạ cấp về 0 - quân nào của mình cũng ăn được.
  * - Hang: không được vào hang của chính mình; vào hang địch là THẮNG.
  * - Hết quân hoặc hết nước đi là THUA. Lặp thế 3 lần: hoà.
  *
@@ -49,17 +49,6 @@ export const JG_NAMES: Record<JgRank, string> = {
   1: "Chuột",
 };
 
-export const JG_EMOJI: Record<JgRank, string> = {
-  8: "🐘",
-  7: "🦁",
-  6: "🐯",
-  5: "🐆",
-  4: "🐺",
-  3: "🐶",
-  2: "🐱",
-  1: "🐭",
-};
-
 const FILES = "abcdefg";
 
 export function jgSquare(rank: number, file: number): string {
@@ -91,7 +80,7 @@ const START: [JgColor, JgRank, number, number][] = [
   ["r", 7, 0, 0], ["r", 6, 0, 6],
   ["r", 3, 1, 1], ["r", 2, 1, 5],
   ["r", 1, 2, 0], ["r", 5, 2, 2], ["r", 4, 2, 4], ["r", 8, 2, 6],
-  // đen (trên) — xoay 180°
+  // đen (trên) - xoay 180°
   ["b", 7, 8, 6], ["b", 6, 8, 0],
   ["b", 3, 7, 5], ["b", 2, 7, 1],
   ["b", 1, 6, 6], ["b", 5, 6, 4], ["b", 4, 6, 2], ["b", 8, 6, 0],
@@ -197,7 +186,7 @@ export class Jungle {
   private canCapture(att: JgPiece, fromI: number, def: JgPiece, toI: number): boolean {
     const attInWater = WATER.has(fromI);
     const defInWater = WATER.has(toI);
-    // băng ranh giới nước–cạn: cấm ăn
+    // băng ranh giới nước-cạn: cấm ăn
     if (attInWater !== defInWater) return false;
     // quân địch đứng trong bẫy CỦA MÌNH → cấp 0
     if (JG_TRAPS[att.color].has(toI)) return true;
@@ -308,7 +297,7 @@ export class Jungle {
   }
 
   gameEnd(): JgEnd | null {
-    // vào hang địch (kiểm cả hai hang — quân đứng trên hang địch)
+    // vào hang địch (kiểm cả hai hang - quân đứng trên hang địch)
     const onRedDen = this.squares[JG_DEN.r];
     if (onRedDen && onRedDen.color === "b") return { winner: "b", termination: "den" };
     const onBlackDen = this.squares[JG_DEN.b];

@@ -17,14 +17,11 @@ import {
   xqResultTitle,
   XQ_TERMINATION_LABELS,
 } from "@/lib/xiangqi/labels";
-import { useAuthStore } from "@/stores/authStore";
 
 export default function XiangqiOnlineGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = params.gameId;
   const router = useRouter();
-  const hydrated = useAuthStore((s) => s.hydrated);
-  const accessToken = useAuthStore((s) => s.accessToken);
 
   const {
     state,
@@ -48,10 +45,6 @@ export default function XiangqiOnlineGamePage() {
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const [modalDismissed, setModalDismissed] = useState(false);
   const [confirmResign, setConfirmResign] = useState(false);
-
-  useEffect(() => {
-    if (hydrated && !accessToken) router.replace("/login?next=/xiangqi/online");
-  }, [hydrated, accessToken, router]);
 
   // server 'white' = Đỏ (r, đi trước), 'black' = Đen (b)
   const myColor: XqColor | null =
@@ -147,7 +140,6 @@ export default function XiangqiOnlineGamePage() {
     return (
       <XqPlayerCard
         name={player?.username ?? "…"}
-        subtitle={player ? `Elo ${player.elo}` : undefined}
         color={color}
         clockMs={
           state ? (color === "r" ? displayTimes.white : displayTimes.black) : null
@@ -178,12 +170,12 @@ export default function XiangqiOnlineGamePage() {
         <div className="mb-4 flex flex-col gap-2">
           {connectionLost && (
             <p className="rounded-[6px] border border-rust bg-rust/10 px-4 py-2 text-sm text-rust">
-              Mất kết nối — đang thử kết nối lại…
+              Mất kết nối - đang thử kết nối lại…
             </p>
           )}
           {oppSecondsLeft !== null && (
             <p className="rounded-[6px] border border-brass bg-brass/10 px-4 py-2 text-sm text-brass">
-              Đối thủ mất kết nối — xử thua sau {oppSecondsLeft} giây nếu không
+              Đối thủ mất kết nối - xử thua sau {oppSecondsLeft} giây nếu không
               quay lại.
             </p>
           )}
@@ -263,7 +255,7 @@ export default function XiangqiOnlineGamePage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.raw === "white" ? "1–0" : result.raw === "black" ? "0–1" : "½–½"}
+              {result.raw === "white" ? "1-0" : result.raw === "black" ? "0-1" : "½-½"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {xqResultTitle(
@@ -274,26 +266,9 @@ export default function XiangqiOnlineGamePage() {
             <p className="mt-1 text-sm text-muted">
               {XQ_TERMINATION_LABELS[result.termination] ?? result.termination}
             </p>
-            {myColor && result.raw !== "aborted" && (
-              <p className="mt-3 text-sm">
-                Elo cờ tướng:{" "}
-                <span
-                  className={`font-[family-name:var(--font-mono)] ${
-                    result.eloChange >= 0 ? "text-sage" : "text-rust"
-                  }`}
-                >
-                  {result.eloChange >= 0 ? "+" : ""}
-                  {result.eloChange}
-                </span>{" "}
-                →{" "}
-                <span className="font-[family-name:var(--font-mono)]">
-                  {result.newElo}
-                </span>
-              </p>
-            )}
             <div className="mt-6 flex justify-center gap-2">
               <Button variant="primary" onClick={() => router.push("/xiangqi/online")}>
-                Tìm trận mới
+                Về sảnh
               </Button>
               {result.raw !== "aborted" && (
                 <Button onClick={() => router.push(`/game/${gameId}`)}>

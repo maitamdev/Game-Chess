@@ -44,14 +44,14 @@ export interface TrackedPiece {
 
 export const TERMINATION_LABELS: Record<Termination, string> = {
   checkmate: "Chiếu bí",
-  stalemate: "Hết nước đi — hoà",
+  stalemate: "Hết nước đi - hoà",
   repetition: "Hoà do lặp thế 3 lần",
   fifty_move: "Hoà theo luật 50 nước",
   insufficient: "Hoà do thiếu lực chiếu bí",
   timeout: "Hết giờ",
   resignation: "Đầu hàng",
   agreement: "Hoà theo thoả thuận",
-  aborted: "Không có nước đi nào — không tính Elo",
+  aborted: "Ván chưa bắt đầu",
 };
 
 export function resultTitle(result: GameResult): string {

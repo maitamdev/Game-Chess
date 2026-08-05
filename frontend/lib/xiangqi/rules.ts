@@ -1,7 +1,7 @@
 /**
- * Bộ luật cờ tướng (Xiangqi) — tự viết, không phụ thuộc thư viện ngoài.
+ * Bộ luật cờ tướng (Xiangqi) - tự viết, không phụ thuộc thư viện ngoài.
  *
- * Bàn 9 cột (file a–i, từ trái của bên Đỏ) × 10 hàng (rank 0–9, 0 là hàng
+ * Bàn 9 cột (file a-i, từ trái của bên Đỏ) × 10 hàng (rank 0-9, 0 là hàng
  * đáy bên Đỏ). Ô ký hiệu "e0" = vị trí Tướng đỏ ban đầu. idx = rank*9+file.
  *
  * Quân: k Tướng, a Sĩ, e Tượng, h Mã, r Xe, c Pháo, s Tốt.
@@ -98,9 +98,9 @@ export class Xiangqi {
   private undoStack: Undo[] = [];
   private positionCounts = new Map<string, number>();
   historyMoves: XqMove[] = [];
-  /** key thế cờ SAU từng nước — phục vụ phát hiện chu kỳ lặp */
+  /** key thế cờ SAU từng nước - phục vụ phát hiện chu kỳ lặp */
   private keyHistory: string[] = [];
-  /** nước thứ i có chiếu tướng không — phục vụ luật chiếu dai */
+  /** nước thứ i có chiếu tướng không - phục vụ luật chiếu dai */
   private checkHistory: boolean[] = [];
 
   constructor(fen: string = XQ_START_FEN) {
@@ -161,7 +161,7 @@ export class Xiangqi {
     return `${rows.join("/")} ${this.side} ${this.halfmove} ${this.plyCount}`;
   }
 
-  /** Khoá thế cờ (bàn + bên đi) — dùng cho lặp thế và engine. */
+  /** Khoá thế cờ (bàn + bên đi) - dùng cho lặp thế và engine. */
   positionKey(): string {
     return this.fen().split(" ").slice(0, 2).join(" ");
   }
@@ -539,7 +539,7 @@ export class Xiangqi {
 
   private searchStack: Undo[] = [];
 
-  /** Áp nước ĐÃ được xác minh (lấy từ moves()) — đường nhanh cho engine
+  /** Áp nước ĐÃ được xác minh (lấy từ moves()) - đường nhanh cho engine
    *  tìm kiếm, không cập nhật lịch sử/lặp thế. Phải gỡ bằng popMove(). */
   pushMove(m: XqMove): void {
     const { rank: fr, file: ff } = xqCoords(m.from);
@@ -552,7 +552,7 @@ export class Xiangqi {
     if (undo) this.unmakeRaw(undo);
   }
 
-  /** Mảng 90 ô (rank*9+file) — chỉ đọc, phục vụ hàm lượng giá. */
+  /** Mảng 90 ô (rank*9+file) - chỉ đọc, phục vụ hàm lượng giá. */
   boardArray(): readonly (XqPiece | null)[] {
     return this.squares;
   }

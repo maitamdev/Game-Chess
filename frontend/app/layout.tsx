@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import Providers from "./providers";
 import Header from "@/components/ui/Header";
 
-const fraunces = Fraunces({
+const manrope = Manrope({
   subsets: ["latin", "vietnamese"],
-  weight: ["500", "600"],
-  variable: "--font-fraunces",
-});
-
-const inter = Inter({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-manrope",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -23,9 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kỳ Đài — Đấu trường cờ & game trí tuệ",
+  title: "Kỳ Đài | Cờ, game bài và trò chơi trí tuệ",
   description:
-    "Cờ vua, cờ tướng, cờ caro, cờ thú, ô ăn quan và minigame giải trí: đấu xếp hạng online, đấu với máy, hoặc hai người một máy.",
+    "Cờ vua, cờ tướng, game bài nhiều người và minigame trên một đấu trường trực tuyến dành cho người Việt.",
 };
 
 export default function RootLayout({
@@ -34,13 +27,11 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <body
-        className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} min-h-screen`}
+        className={`${manrope.variable} ${jetbrainsMono.variable} min-h-[100dvh]`}
         suppressHydrationWarning
       >
-        <Providers>
-          <Header />
-          <main>{children}</main>
-        </Providers>
+        <Header />
+        <main>{children}</main>
       </body>
     </html>
   );

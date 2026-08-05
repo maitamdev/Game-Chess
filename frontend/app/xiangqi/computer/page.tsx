@@ -193,11 +193,10 @@ export default function XiangqiComputerPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Cờ tướng — đấu với máy
+          Cờ tướng - đấu với máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          Engine cờ tướng chạy ngay trong trình duyệt — không cần mạng, không
-          cần đăng nhập.
+          Engine cờ tướng chạy ngay trong trình duyệt và có thể chơi khi không có mạng.
         </p>
         <div className="mt-8 max-w-xl rounded-[10px] border border-line bg-slate p-6">
           <p className="text-sm font-medium">Mức độ</p>
@@ -278,7 +277,7 @@ export default function XiangqiComputerPage() {
 
   const card = (color: XqColor) => (
     <XqPlayerCard
-      name={color === engineColor ? `Máy — ${levelInfo.name}` : "Bạn"}
+      name={color === engineColor ? `Máy - ${levelInfo.name}` : "Bạn"}
       subtitle={color === engineColor ? `Mức ${level}` : undefined}
       color={color}
       clockMs={timeControl ? (color === "r" ? redMs : blackMs) : null}
@@ -351,7 +350,7 @@ export default function XiangqiComputerPage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : result.winner === "r" ? "1–0" : "0–1"}
+              {result.winner === null ? "½-½" : result.winner === "r" ? "1-0" : "0-1"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {xqResultTitle(result.winner, result.termination)}

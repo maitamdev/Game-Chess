@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Shuffle } from "@phosphor-icons/react";
 import JungleBoard from "@/components/jungle/JungleBoard";
+import JungleGameFrame from "@/components/jungle/JungleGameFrame";
+import JunglePiece from "@/components/jungle/JunglePiece";
 import JunglePlayerCard from "@/components/jungle/JunglePlayerCard";
 import MoveList from "@/components/game/MoveList";
 import GameControls from "@/components/game/GameControls";
@@ -12,7 +15,7 @@ import { useJungleStore } from "@/stores/jungleStore";
 import { useJungleClockTicker } from "@/lib/jungle/useJungleClock";
 import { trackJgPieces } from "@/lib/jungle/tracker";
 import {
-  jgCapturedEmoji,
+  jgCapturedRanks,
   jgResultTitle,
   JG_TERMINATION_LABELS,
   playJgMoveSound,
@@ -189,10 +192,10 @@ export default function JungleComputerPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Cờ thú — đấu với máy
+          Cờ thú - đấu với máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          AI chạy ngay trong trình duyệt — không cần mạng, không cần đăng nhập.
+          AI chạy ngay trong trình duyệt và có thể chơi khi không có mạng.
         </p>
         <div className="mt-8 max-w-xl rounded-[10px] border border-line bg-slate p-6">
           <p className="text-sm font-medium">Mức độ</p>
@@ -221,11 +224,11 @@ export default function JungleComputerPage() {
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(
               [
-                ["r", "🦁 Đỏ (đi trước)"],
-                ["b", "🐯 Xanh"],
-                ["random", "⚄ Ngẫu nhiên"],
+                { value: "r", label: "Đỏ (đi trước)" },
+                { value: "b", label: "Xanh" },
+                { value: "random", label: "Ngẫu nhiên" },
               ] as const
-            ).map(([value, label]) => (
+            ).map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
@@ -236,7 +239,19 @@ export default function JungleComputerPage() {
                     : "border-line text-muted hover:border-brass/50"
                 }`}
               >
-                {label}
+                <span className="flex items-center justify-center gap-2">
+                  {value === "random" ? (
+                    <Shuffle aria-hidden size={17} weight="duotone" />
+                  ) : (
+                    <JunglePiece
+                      rank={value === "r" ? 7 : 6}
+                      color={value}
+                      showRank={false}
+                      className="h-6 w-6"
+                    />
+                  )}
+                  <span>{label}</span>
+                </span>
               </button>
             ))}
           </div>
@@ -267,30 +282,27 @@ export default function JungleComputerPage() {
     );
   }
 
-  const cardWidth = {
-    width: "calc(min(72vh, 600px) * 7 / 9)",
-    maxWidth: "calc(100vw - 32px)",
-  };
   const topColor: JgColor = orientation === "red" ? "b" : "r";
   const bottomColor: JgColor = orientation === "red" ? "r" : "b";
 
   const card = (color: JgColor) => (
     <JunglePlayerCard
-      name={color === engineColor ? `Máy — ${levelInfo.name}` : "Bạn"}
+      name={color === engineColor ? `Máy - ${levelInfo.name}` : "Bạn"}
       subtitle={color === "r" ? "Đỏ đi trước" : undefined}
       color={color}
       clockMs={timeControl ? (color === "r" ? redMs : blueMs) : null}
       clockActive={status === "playing" && clockRunning && turn === color}
+      isTurn={status === "playing" && turn === color}
       thinking={color === engineColor && thinking}
-      capturedEmoji={jgCapturedEmoji(moves, viewIndex, color === "r" ? "b" : "r")}
+      capturedRanks={jgCapturedRanks(moves, viewIndex, color === "r" ? "b" : "r")}
     />
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
-        <div className="flex flex-col gap-3">
-          <div style={cardWidth}>{card(topColor)}</div>
+    <>
+      <JungleGameFrame
+        topPlayer={card(topColor)}
+        board={
           <JungleBoard
             pieces={pieces}
             turn={turn}
@@ -302,12 +314,11 @@ export default function JungleComputerPage() {
             lastMove={lastMove}
             hint={hint}
           />
-          <div style={cardWidth}>{card(bottomColor)}</div>
-        </div>
-
-        <aside className="flex w-full max-w-sm flex-col gap-3 lg:h-[min(78vh,660px)] lg:w-72 lg:self-center">
-          <div className="flex items-center justify-between gap-2">
+        }
+        bottomPlayer={card(bottomColor)}
+        actions={
             <GameControls
+              variant="jungle"
               onUndo={handleUndo}
               undoDisabled={status !== "playing" || moves.length === 0}
               onHint={() => {
@@ -331,15 +342,27 @@ export default function JungleComputerPage() {
                 useJungleStore.setState({ status: "idle" });
               }}
             />
-            <SoundToggle />
-          </div>
+        }
+        soundControl={<SoundToggle variant="jungle" />}
+        moveList={
           <MoveList
+            variant="jungle"
             moves={moves}
             viewIndex={viewIndex}
             onSelect={(i) => useJungleStore.getState().setView(i)}
           />
-        </aside>
-      </div>
+        }
+        statusColor={turn}
+        statusLabel={
+          status === "over"
+            ? "Ván đã kết thúc"
+            : thinking
+              ? "Máy đang suy nghĩ"
+              : turn === playerColor
+                ? "Lượt của bạn"
+                : "Lượt của máy"
+        }
+      />
 
       <Modal
         open={status === "over" && !modalDismissed}
@@ -347,9 +370,20 @@ export default function JungleComputerPage() {
       >
         {result && (
           <div className="text-center">
-            <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : result.winner === "r" ? "🦁" : "🐯"}
-            </span>
+            <div aria-hidden className="mx-auto flex h-12 items-center justify-center">
+              {result.winner === null ? (
+                <span className="font-[family-name:var(--font-mono)] text-xl text-brass">
+                  ½-½
+                </span>
+              ) : (
+                <JunglePiece
+                  rank={result.winner === "r" ? 7 : 6}
+                  color={result.winner}
+                  showRank={false}
+                  className="h-12 w-12"
+                />
+              )}
+            </div>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {jgResultTitle(result.winner, result.termination)}
             </h2>
@@ -374,6 +408,6 @@ export default function JungleComputerPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 }

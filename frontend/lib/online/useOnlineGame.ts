@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Hook ván đấu online qua HTTP polling — thay thế lib/ws.ts (WebSocket).
+ * Hook ván đấu online qua HTTP polling - thay thế lib/ws.ts (WebSocket).
  *
  * Server (app/api/live/*) là trọng tài duy nhất; hook chỉ:
  *   - poll GET /api/live/:id/state mỗi POLL_MS (kiêm heartbeat hiện diện),
  *   - đi nước lạc quan: áp local ngay, gửi POST /move kèm ply kỳ vọng,
  *     đối chiếu lại bằng state server trả về (state là chân lý),
  *   - nội suy đồng hồ từ mốc server_time gần nhất,
- *   - cập nhật Elo vào authStore đúng một lần khi ván CHUYỂN sang kết thúc.
+ *   - phát âm thanh khi ván chuyển sang trạng thái kết thúc.
  *
  * Dùng chung cho cả 5 game: mọi thứ đặc thù game (bàn cờ, luật client,
  * âm thanh) nằm ở trang gọi hook.
@@ -17,7 +17,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, ApiError } from "@/lib/api";
-import { useAuthStore, type AuthUser } from "@/stores/authStore";
 import { playSound } from "@/lib/sounds";
 
 const POLL_MS = 1500;
@@ -38,8 +37,8 @@ export interface LiveState {
   variant: OnlineVariant;
   time_control: string;
   status: "active" | "finished";
-  white: { id: string; username: string; elo: number };
-  black: { id: string; username: string; elo: number };
+  white: { id: string; username: string };
+  black: { id: string; username: string };
   your_color: OnlineColor | null;
   moves: LiveMove[];
   ply: number;
@@ -53,10 +52,6 @@ export interface LiveState {
   disconnect_forfeit_ms: number;
   result: string | null;
   termination: string | null;
-  white_elo_change: number | null;
-  black_elo_change: number | null;
-  white_new_elo: number | null;
-  black_new_elo: number | null;
   score_a: number | null;
   score_b: number | null;
   rejected?: string;
@@ -66,24 +61,11 @@ export interface OnlineResultInfo {
   /** 'white' | 'black' | 'draw' | 'aborted' */
   raw: string;
   termination: string;
-  /** thay đổi Elo của CHÍNH MÌNH (0 nếu là khán giả / ván huỷ) */
-  eloChange: number;
-  newElo: number;
   scoreA: number | null;
   scoreB: number | null;
 }
 
-const ELO_FIELD: Record<OnlineVariant, keyof AuthUser> = {
-  chess: "elo",
-  xiangqi: "xq_elo",
-  caro: "caro_elo",
-  jungle: "jg_elo",
-  oanquan: "oq_elo",
-};
-
 export function useOnlineGame(gameId: string | null) {
-  const user = useAuthStore((s) => s.user);
-
   const [state, setState] = useState<LiveState | null>(null);
   const [pending, setPending] = useState<{ uci: string; ply: number } | null>(
     null,
@@ -99,11 +81,8 @@ export function useOnlineGame(gameId: string | null) {
   const notFoundRef = useRef(false);
 
   const myColor: OnlineColor | null = useMemo(() => {
-    if (!state || !user) return null;
-    if (state.white.id === user.id) return "white";
-    if (state.black.id === user.id) return "black";
-    return null;
-  }, [state, user]);
+    return state?.your_color ?? null;
+  }, [state]);
 
   const applyState = useCallback((st: LiveState) => {
     stateRef.current = st;
@@ -121,9 +100,7 @@ export function useOnlineGame(gameId: string | null) {
 
     const tick = async () => {
       try {
-        const st = await api<LiveState>(`/api/live/${gameId}/state`, {
-          auth: true,
-        });
+        const st = await api<LiveState>(`/api/live/${gameId}/state`);
         if (!stopped) applyState(st);
       } catch (err) {
         if (stopped) return;
@@ -144,7 +121,7 @@ export function useOnlineGame(gameId: string | null) {
     const timer = setInterval(() => {
       if (shouldPoll()) tick();
     }, POLL_MS);
-    // tab nền bị browser bóp setInterval xuống ~1 nhịp/phút — poll ngay khi
+    // tab nền bị browser bóp setInterval xuống ~1 nhịp/phút - poll ngay khi
     // tab hiện lại để heartbeat/đồng hồ bắt kịp
     const onVisible = () => {
       if (document.visibilityState === "visible" && shouldPoll()) tick();
@@ -157,23 +134,14 @@ export function useOnlineGame(gameId: string | null) {
     };
   }, [gameId, applyState]);
 
-  // ---- chuyển active → finished: âm thanh + cập nhật Elo vào store ----
+  // ---- chuyển active → finished: âm thanh phản hồi ----
   useEffect(() => {
     if (!state) return;
     const prev = prevStatusRef.current;
     prevStatusRef.current = state.status;
     if (state.status !== "finished" || prev !== "active") return;
     playSound("game-end");
-    if (myColor === null || state.result === "aborted") return;
-    const newElo =
-      myColor === "white" ? state.white_new_elo : state.black_new_elo;
-    const u = useAuthStore.getState().user;
-    if (u !== null && newElo !== null) {
-      useAuthStore.setState({
-        user: { ...u, [ELO_FIELD[state.variant]]: newElo },
-      });
-    }
-  }, [state, myColor]);
+  }, [state]);
 
   // ---- tick 100ms cho đồng hồ ----
   const finished = state?.status === "finished";
@@ -235,27 +203,13 @@ export function useOnlineGame(gameId: string | null) {
   // ---- kết quả ----
   const result: OnlineResultInfo | null = useMemo(() => {
     if (!state || state.status !== "finished") return null;
-    const eloChange =
-      myColor === "white"
-        ? (state.white_elo_change ?? 0)
-        : myColor === "black"
-          ? (state.black_elo_change ?? 0)
-          : 0;
-    const newElo =
-      myColor === "white"
-        ? (state.white_new_elo ?? 0)
-        : myColor === "black"
-          ? (state.black_new_elo ?? 0)
-          : 0;
     return {
       raw: state.result ?? "draw",
       termination: state.termination ?? "agreement",
-      eloChange,
-      newElo,
       scoreA: state.score_a,
       scoreB: state.score_b,
     };
-  }, [state, myColor]);
+  }, [state]);
 
   // ---- hành động ----
   const post = useCallback(
@@ -265,7 +219,6 @@ export function useOnlineGame(gameId: string | null) {
         const st = await api<LiveState>(`/api/live/${gameId}${path}`, {
           method: "POST",
           body: body ?? {},
-          auth: true,
         });
         applyState(st);
         if (st.rejected !== undefined) setPending(null);
@@ -277,7 +230,7 @@ export function useOnlineGame(gameId: string | null) {
     [gameId, applyState],
   );
 
-  /** Đi nước lạc quan — trang gọi sau khi đã tự kiểm tra hợp lệ bằng luật client. */
+  /** Đi nước lạc quan - trang gọi sau khi đã tự kiểm tra hợp lệ bằng luật client. */
   const sendMove = useCallback(
     (uci: string) => {
       const base = stateRef.current?.moves.length ?? 0;

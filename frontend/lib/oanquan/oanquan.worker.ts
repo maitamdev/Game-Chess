@@ -30,7 +30,7 @@ self.onmessage = (e: MessageEvent<InMessage>) => {
   const msg = e.data;
   if (msg.type === "stop") return;
 
-  // dựng lại ván để lấy đúng lượt (không suy từ history.length) — "a" dương
+  // dựng lại ván để lấy đúng lượt (không suy từ history.length) - "a" dương
   const moverSign = new OAnQuan(msg.history).turn() === "a" ? 1 : -1;
   const result = searchOq(msg.history, {
     ...LEVEL_PARAMS[msg.level],

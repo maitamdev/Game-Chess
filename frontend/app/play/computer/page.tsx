@@ -59,7 +59,7 @@ export default function ComputerPlayPage() {
   const engineColor: Color = playerColor === "w" ? "b" : "w";
   const isLive = viewIndex === moves.length;
 
-  // Store dùng chung giữa các chế độ — vào trang thì bắt đầu từ màn cấu hình
+  // Store dùng chung giữa các chế độ - vào trang thì bắt đầu từ màn cấu hình
   useEffect(() => {
     useGameStore.setState({ status: "idle" });
   }, []);
@@ -196,8 +196,7 @@ export default function ComputerPlayPage() {
           Đấu với máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          Engine chạy ngay trong trình duyệt của bạn — không cần mạng, không
-          cần đăng nhập.
+          Engine chạy ngay trong trình duyệt của bạn và có thể chơi khi không có mạng.
         </p>
 
         <div className="mt-8 max-w-xl rounded-[10px] border border-line bg-slate p-6">
@@ -278,7 +277,7 @@ export default function ComputerPlayPage() {
   const card = (color: Color) =>
     color === engineColor ? (
       <PlayerCard
-        name={`Máy — ${levelInfo.name}`}
+        name={`Máy - ${levelInfo.name}`}
         subtitle={`Mức ${level}`}
         color={color}
         clockMs={timeControl ? (color === "w" ? whiteMs : blackMs) : null}

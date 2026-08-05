@@ -33,7 +33,7 @@ export interface CaroSearchParams {
 
 class TimeUp extends Error {}
 
-/** điểm một chuỗi dài `len` với `open` đầu thoáng (0–2) */
+/** điểm một chuỗi dài `len` với `open` đầu thoáng (0-2) */
 function lineScore(len: number, open: number): number {
   if (len >= 5) return 200_000;
   if (open === 0) return 0;

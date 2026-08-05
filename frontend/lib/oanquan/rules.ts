@@ -1,10 +1,10 @@
 /**
- * Luật Ô Ăn Quan — bàn 12 ô xếp vòng: 2 ô quan ở hai đầu + mỗi bên 5 ô dân.
+ * Luật Ô Ăn Quan - bàn 12 ô xếp vòng: 2 ô quan ở hai đầu + mỗi bên 5 ô dân.
  * Bên A (hàng dưới) đi trước, ánh xạ "white" phía server.
  *
  * Chỉ số ô trong vòng (đi theo chiều +1):
- *   0 = ô quan trái; 1–5 = ô dân bên A (trái→phải theo hướng nhìn của A);
- *   6 = ô quan phải; 7–11 = ô dân bên B (7 đối diện ô 5, 11 đối diện ô 1).
+ *   0 = ô quan trái; 1-5 = ô dân bên A (trái→phải theo hướng nhìn của A);
+ *   6 = ô quan phải; 7-11 = ô dân bên B (7 đối diện ô 5, 11 đối diện ô 1).
  *
  * Khởi đầu: mỗi ô dân 5 dân, mỗi ô quan 1 quan (không dân). Quan = 10 điểm,
  * dân = 1 điểm (theo cách tính phổ biến).
@@ -189,7 +189,7 @@ export class OAnQuan {
 
   /**
    * Lõi luật: rải từ ô `cell` theo `step` trên bản sao trạng thái bàn.
-   * Mọi đường (moves/move/pushMove) đều đi qua đây — không lặp logic.
+   * Mọi đường (moves/move/pushMove) đều đi qua đây - không lặp logic.
    */
   private sow(cell: number, step: 1 | -1): SowResult {
     const dan = this.dan.slice();

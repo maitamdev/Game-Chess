@@ -7,31 +7,38 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/migrations.test.ts tests/rooms.test.ts tests/room-navigation.test.ts tests/uno.test.ts tests/jungle.test.ts",
+    "test:e2e": "tsx tests/e2e/rooms-flow-cli.ts",
+    "test:e2e:local": "npm run build && tsx tests/e2e/run-local.ts",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.4",
+    "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-query": "^5.80.0",
-    "bcryptjs": "^3.0.3",
     "chess.js": "^1.4.0",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.15.0",
-    "jose": "^6.2.4",
     "next": "^15.5.0",
+    "postgres": "^3.4.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "sharp": "^0.35.3",
     "zod": "^4.4.3",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
+    "@electric-sql/pglite-socket": "^0.2.7",
+    "@next/env": "^15.5.22",
     "@tailwindcss/postcss": "^4.1.8",
-    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4.1.8",
+    "tsx": "^4.23.1",
     "typescript": "^5.8.0"
   }
 }

@@ -12,7 +12,6 @@ import SoundToggle from "@/components/ui/SoundToggle";
 import { useOnlineGame } from "@/lib/online/useOnlineGame";
 import { playSound } from "@/lib/sounds";
 import { trackPieces } from "@/lib/pieceTracker";
-import { useAuthStore } from "@/stores/authStore";
 import type { GameResult, Termination } from "@/lib/types";
 
 const PIECE_VALUES: Record<PieceSymbol, number> = {
@@ -27,7 +26,7 @@ function soundFor(san: string, check: boolean, gameEnd: boolean) {
   playSound("move");
 }
 
-/** Áp một nước UCI (4-5 ký tự, có thể kèm phong cấp) — ném lỗi nếu bất hợp lệ */
+/** Áp một nước UCI (4-5 ký tự, có thể kèm phong cấp) - ném lỗi nếu bất hợp lệ */
 function applyUci(chess: Chess, uci: string): Move {
   return chess.move({
     from: uci.slice(0, 2) as Square,
@@ -40,8 +39,6 @@ export default function OnlineGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = params.gameId;
   const router = useRouter();
-  const hydrated = useAuthStore((s) => s.hydrated);
-  const accessToken = useAuthStore((s) => s.accessToken);
 
   const {
     state,
@@ -74,10 +71,6 @@ export default function OnlineGamePage() {
   const premoveRef = useRef(premove);
   premoveRef.current = premove;
 
-  useEffect(() => {
-    if (hydrated && !accessToken) router.replace(`/login?next=/play/online`);
-  }, [hydrated, accessToken, router]);
-
   // server 'white' = Trắng (w), 'black' = Đen (b)
   const myColor: Color | null =
     onlineColor === "white" ? "w" : onlineColor === "black" ? "b" : null;
@@ -90,7 +83,7 @@ export default function OnlineGamePage() {
       try {
         moves.push(applyUci(chess, uci));
       } catch {
-        break; // dữ liệu lệch — poll kế tiếp sẽ sửa
+        break; // dữ liệu lệch - poll kế tiếp sẽ sửa
       }
     }
     return { verboseMoves: moves, liveChess: chess };
@@ -173,7 +166,7 @@ export default function OnlineGamePage() {
     try {
       for (const uci of confirmedUcis) lastMv = applyUci(chess, uci);
     } catch {
-      return; // dữ liệu lệch — bỏ qua âm thanh
+      return; // dữ liệu lệch - bỏ qua âm thanh
     }
     if (lastMv) soundFor(lastMv.san, chess.inCheck(), false);
 
@@ -189,7 +182,7 @@ export default function OnlineGamePage() {
         });
         submitMove(pm.from, pm.to, pm.promotion);
       } catch {
-        // premove không còn hợp lệ — huỷ trong im lặng
+        // premove không còn hợp lệ - huỷ trong im lặng
       }
     }
   }, [confirmedUcis, myColor, result, submitMove]);
@@ -239,7 +232,6 @@ export default function OnlineGamePage() {
     return (
       <PlayerCard
         name={player?.username ?? "…"}
-        subtitle={player ? `Elo ${player.elo}` : undefined}
         color={color}
         clockMs={
           state ? (color === "w" ? displayTimes.white : displayTimes.black) : null
@@ -283,12 +275,12 @@ export default function OnlineGamePage() {
         <div className="mb-4 flex flex-col gap-2">
           {connectionLost && (
             <p className="rounded-[6px] border border-rust bg-rust/10 px-4 py-2 text-sm text-rust">
-              Mất kết nối — đang thử kết nối lại…
+              Mất kết nối - đang thử kết nối lại…
             </p>
           )}
           {oppSecondsLeft !== null && (
             <p className="rounded-[6px] border border-brass bg-brass/10 px-4 py-2 text-sm text-brass">
-              Đối thủ mất kết nối — xử thua sau {oppSecondsLeft} giây nếu không
+              Đối thủ mất kết nối - xử thua sau {oppSecondsLeft} giây nếu không
               quay lại.
             </p>
           )}
@@ -384,7 +376,7 @@ export default function OnlineGamePage() {
         onClose={() => setModalDismissed(true)}
         actions={[
           {
-            label: "Tìm trận mới",
+            label: "Về sảnh",
             primary: true,
             onClick: () => router.push("/play/online"),
           },
@@ -393,20 +385,6 @@ export default function OnlineGamePage() {
             : []),
         ]}
       />
-      {result && myColor && result.raw !== "aborted" && !modalDismissed && (
-        <div className="pointer-events-none fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-[6px] border border-line bg-slate px-4 py-2 text-sm">
-          Elo:{" "}
-          <span
-            className={`font-[family-name:var(--font-mono)] ${
-              result.eloChange >= 0 ? "text-sage" : "text-rust"
-            }`}
-          >
-            {result.eloChange >= 0 ? "+" : ""}
-            {result.eloChange}
-          </span>{" "}
-          → <span className="font-[family-name:var(--font-mono)]">{result.newElo}</span>
-        </div>
-      )}
     </div>
   );
 }

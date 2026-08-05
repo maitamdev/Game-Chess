@@ -1,309 +1,32 @@
 /**
- * Ván đấu online + ghép cặp trên kiến trúc serverless (Vercel).
+ * Ván đấu online trên kiến trúc serverless.
  *
  * Khác backend Python cũ (WebSocket + GameSession trong RAM + watchdog nền):
  * ở đây KHÔNG có tiến trình thường trực. Toàn bộ trạng thái sống trong DB,
  * client poll qua HTTP, và mọi phán quyết theo thời gian được thực hiện
  * "lazy" ngay đầu mỗi request đọc/ghi ván:
  *
- *   1. Huỷ ván  — ply 0 quá 30s mà một bên chưa từng vào ván, hoặc quá 120s.
- *   2. Hết giờ  — đồng hồ suy từ turn_started_at; bên còn lại thiếu lực → hoà.
- *   3. Xử thua rớt mạng — heartbeat = lần poll cuối; quá 60s không poll → thua.
+ *   1. Huỷ ván  - ply 0 quá 30s mà một bên chưa từng vào ván, hoặc quá 120s.
+ *   2. Hết giờ  - đồng hồ suy từ turn_started_at; bên còn lại thiếu lực → hoà.
+ *   3. Xử thua rớt mạng - heartbeat = lần poll cuối; quá 60s không poll → thua.
  *
- * Ghép cặp cũng không có vòng lặp nền: mỗi lần join/poll status đều thử ghép
- * trong transaction; entry không poll quá 15s bị dọn khỏi hàng đợi.
  * Server vẫn là trọng tài duy nhất: mọi nước đi được kiểm bằng bộ luật
  * trong lib/server/rules trước khi ghi.
  */
 
-import { and, asc, eq, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
-import { db, games, moves, queueEntries, ratingHistory, users } from "./db";
+import { db, games, moves, users } from "./db";
 import type { GameRow, MoveRow, UserRow } from "./db";
-import { eloChanges } from "./elo";
 import { ApiError } from "./errors";
 import { createRules, OTHER, type Color, type ServerRules } from "./rules";
-import {
-  isVariant,
-  parseTimeControl,
-  userVariantStats,
-  VALID_TIME_CONTROLS,
-  VARIANT_STATS,
-  type Variant,
-} from "./variants";
+import { type Variant } from "./variants";
 
-// Cấu hình — giữ nguyên giá trị backend cũ
-const MM_BASE_BAND = 100;
-const MM_BAND_STEP = 50;
-const MM_STEP_MS = 5_000;
-const MM_MAX_BAND = 400;
-const QUEUE_STALE_MS = 15_000;
 // 90s (backend cũ 60s): heartbeat giờ là setInterval phía client, tab nền bị
-// browser bóp xuống ~1 nhịp/phút — ngưỡng phải lớn hơn hẳn 60s để không xử oan.
+// browser bóp xuống ~1 nhịp/phút - ngưỡng phải lớn hơn hẳn 60s để không xử oan.
 const DISCONNECT_FORFEIT_MS = 90_000;
 const ABORT_MS = 30_000;
 const HARD_ABORT_MS = 120_000;
-
-// ---------------------------------------------------------------------------
-// Ghép cặp
-// ---------------------------------------------------------------------------
-
-function band(joinedAt: number, now: number): number {
-  const widened =
-    MM_BASE_BAND + MM_BAND_STEP * Math.floor((now - joinedAt) / MM_STEP_MS);
-  return Math.min(widened, MM_MAX_BAND);
-}
-
-async function activeGameOf(userId: string): Promise<GameRow | null> {
-  const rows = await db
-    .select()
-    .from(games)
-    .where(
-      and(
-        eq(games.status, "active"),
-        or(eq(games.whiteId, userId), eq(games.blackId, userId)),
-      ),
-    )
-    .limit(1);
-  return rows[0] ?? null;
-}
-
-/** Thử ghép các entry chưa matched trong một bucket (variant, tc). */
-async function tryMatchBucket(
-  variant: Variant,
-  timeControl: string,
-  now: number,
-): Promise<void> {
-  await db.transaction(async (tx) => {
-    // dọn entry chết (không poll quá hạn) trước khi ghép
-    await tx
-      .delete(queueEntries)
-      .where(
-        and(
-          eq(queueEntries.variant, variant),
-          eq(queueEntries.timeControl, timeControl),
-          isNull(queueEntries.matchedGameId),
-          lt(queueEntries.lastSeen, now - QUEUE_STALE_MS),
-        ),
-      );
-
-    const entries = await tx
-      .select()
-      .from(queueEntries)
-      .where(
-        and(
-          eq(queueEntries.variant, variant),
-          eq(queueEntries.timeControl, timeControl),
-          isNull(queueEntries.matchedGameId),
-        ),
-      )
-      .orderBy(asc(queueEntries.joinedAt));
-
-    const taken = new Set<number>();
-    for (let i = 0; i < entries.length - 1; i++) {
-      if (taken.has(i)) continue;
-      const a = entries[i];
-      for (let j = i + 1; j < entries.length; j++) {
-        if (taken.has(j)) continue;
-        const b = entries[j];
-        const diff = Math.abs(a.elo - b.elo);
-        if (diff > band(a.joinedAt, now) || diff > band(b.joinedAt, now)) {
-          continue;
-        }
-        taken.add(i);
-        taken.add(j);
-
-        // Bốc màu 50/50 rồi tạo ván
-        const [w, bl] = Math.random() < 0.5 ? [a, b] : [b, a];
-        const { initialMs, incrementMs } = parseTimeControl(timeControl);
-        const gameId = crypto.randomUUID();
-        await tx.insert(games).values({
-          id: gameId,
-          whiteId: w.userId,
-          blackId: bl.userId,
-          variant,
-          timeControl,
-          whiteEloBefore: w.elo,
-          blackEloBefore: bl.elo,
-          startedAt: now,
-          status: "active",
-          whiteMs: initialMs,
-          blackMs: initialMs,
-          incrementMs,
-          lastPly: 0,
-        });
-        await tx
-          .update(queueEntries)
-          .set({ matchedGameId: gameId })
-          .where(eq(queueEntries.id, a.id));
-        await tx
-          .update(queueEntries)
-          .set({ matchedGameId: gameId })
-          .where(eq(queueEntries.id, b.id));
-        break;
-      }
-    }
-  });
-}
-
-export interface QueueStatus {
-  status: "idle" | "waiting" | "matched";
-  position?: number;
-  game_id?: string;
-  variant?: Variant;
-  time_control?: string;
-}
-
-export async function joinQueue(
-  user: UserRow,
-  variantRaw: string,
-  timeControl: string,
-): Promise<QueueStatus> {
-  if (
-    !isVariant(variantRaw) ||
-    !(VALID_TIME_CONTROLS as readonly string[]).includes(timeControl)
-  ) {
-    throw new ApiError(
-      400,
-      "INVALID_TIME_CONTROL",
-      "Thể thức hoặc loại cờ không hợp lệ",
-    );
-  }
-  const variant = variantRaw;
-
-  // Entry cũ đã được ghép mà chưa nhận? — giao ván đó thay vì xếp hàng lại
-  // (xoá mù entry matched sẽ đẩy user vào hai ván active cùng lúc). Chỉ giao
-  // khi ván CÒN active — entry mồ côi trỏ tới ván đã xong thì dọn đi.
-  const mine = await db
-    .select()
-    .from(queueEntries)
-    .where(eq(queueEntries.userId, user.id))
-    .limit(1);
-  if (mine[0]?.matchedGameId != null) {
-    const entry = mine[0];
-    await db.delete(queueEntries).where(eq(queueEntries.id, entry.id));
-    const matchedRows = await db
-      .select({ status: games.status })
-      .from(games)
-      .where(eq(games.id, entry.matchedGameId!))
-      .limit(1);
-    if (matchedRows[0]?.status === "active") {
-      return {
-        status: "matched",
-        game_id: entry.matchedGameId!,
-        variant: entry.variant as Variant,
-        time_control: entry.timeControl,
-      };
-    }
-    // ván đã kết thúc/huỷ — rơi xuống xếp hàng bình thường
-  }
-
-  const active = await activeGameOf(user.id);
-  if (active !== null) {
-    throw new ApiError(409, "ALREADY_IN_GAME", "Bạn đang có ván đấu chưa kết thúc");
-  }
-
-  const now = Date.now();
-  const { elo } = userVariantStats(user, variant);
-  // chỉ xoá entry CHƯA ghép — entry matched trong khe cửa sổ trên được giữ lại
-  await db
-    .delete(queueEntries)
-    .where(
-      and(eq(queueEntries.userId, user.id), isNull(queueEntries.matchedGameId)),
-    );
-  try {
-    await db.insert(queueEntries).values({
-      userId: user.id,
-      variant,
-      timeControl,
-      elo,
-      joinedAt: now,
-      lastSeen: now,
-    });
-  } catch {
-    // vi phạm unique(user_id): entry vừa được matcher gắn game trong khe này
-    return queueStatus(user);
-  }
-  await tryMatchBucket(variant, timeControl, now);
-  return queueStatus(user);
-}
-
-export async function leaveQueue(user: UserRow): Promise<void> {
-  await db
-    .delete(queueEntries)
-    .where(
-      and(eq(queueEntries.userId, user.id), isNull(queueEntries.matchedGameId)),
-    );
-}
-
-export async function queueStatus(user: UserRow): Promise<QueueStatus> {
-  const now = Date.now();
-  const rows = await db
-    .select()
-    .from(queueEntries)
-    .where(eq(queueEntries.userId, user.id))
-    .limit(1);
-  let entry = rows[0];
-  if (entry === undefined) {
-    // Có thể entry đã bị dọn nhưng ván vừa được tạo — kiểm tra ván active
-    const active = await activeGameOf(user.id);
-    if (active !== null) {
-      return {
-        status: "matched",
-        game_id: active.id,
-        variant: active.variant as Variant,
-        time_control: active.timeControl,
-      };
-    }
-    return { status: "idle" };
-  }
-
-  if (entry.matchedGameId === null) {
-    await db
-      .update(queueEntries)
-      .set({ lastSeen: now })
-      .where(eq(queueEntries.id, entry.id));
-    await tryMatchBucket(entry.variant as Variant, entry.timeControl, now);
-    const after = await db
-      .select()
-      .from(queueEntries)
-      .where(eq(queueEntries.id, entry.id))
-      .limit(1);
-    entry = after[0] ?? entry;
-  }
-
-  if (entry.matchedGameId !== null) {
-    await db.delete(queueEntries).where(eq(queueEntries.id, entry.id));
-    const matchedRows = await db
-      .select({ status: games.status })
-      .from(games)
-      .where(eq(games.id, entry.matchedGameId))
-      .limit(1);
-    if (matchedRows[0]?.status === "active") {
-      return {
-        status: "matched",
-        game_id: entry.matchedGameId,
-        variant: entry.variant as Variant,
-        time_control: entry.timeControl,
-      };
-    }
-    return { status: "idle" }; // entry mồ côi — ván đã xong từ lâu
-  }
-
-  const bucket = await db
-    .select({ joinedAt: queueEntries.joinedAt })
-    .from(queueEntries)
-    .where(
-      and(
-        eq(queueEntries.variant, entry.variant),
-        eq(queueEntries.timeControl, entry.timeControl),
-        isNull(queueEntries.matchedGameId),
-      ),
-    );
-  const position =
-    bucket.filter((e) => e.joinedAt <= entry.joinedAt).length || 1;
-  return { status: "waiting", position };
-}
 
 // ---------------------------------------------------------------------------
 // Trạng thái ván + phán quyết lazy
@@ -314,8 +37,8 @@ export interface LiveState {
   variant: Variant;
   time_control: string;
   status: "active" | "finished";
-  white: { id: string; username: string; elo: number };
-  black: { id: string; username: string; elo: number };
+  white: { id: string; username: string };
+  black: { id: string; username: string };
   your_color: Color | null;
   moves: { ply: number; san: string; uci: string }[];
   ply: number;
@@ -331,10 +54,6 @@ export interface LiveState {
   // khi ván kết thúc:
   result: string | null;
   termination: string | null;
-  white_elo_change: number | null;
-  black_elo_change: number | null;
-  white_new_elo: number | null;
-  black_new_elo: number | null;
   /** riêng ô ăn quan khi kết thúc tự nhiên */
   score_a: number | null;
   score_b: number | null;
@@ -351,7 +70,7 @@ interface Loaded {
   /**
    * Snapshot "rách": games row và bảng moves đọc ở hai thời điểm, một nước đi
    * commit lọt vào giữa (lastPly ≠ số nước đọc được). Khi rách, TUYỆT ĐỐI
-   * không phán quyết theo thời gian — đồng hồ trong row là của thế cờ cũ.
+   * không phán quyết theo thời gian - đồng hồ trong row là của thế cờ cũ.
    */
   torn: boolean;
 }
@@ -411,7 +130,7 @@ function currentTimes(
 /**
  * Chốt ván trong transaction. Guard kép WHERE status='active' AND
  * lastPly = <ply của snapshot>: hai request cùng phát hiện kết thúc thì chỉ
- * một bên ghi Elo/stats, và một phán quyết tính trên snapshot CŨ (một nước
+ * một bên ghi kết quả, và một phán quyết tính trên snapshot CŨ (một nước
  * vừa commit song song) sẽ trượt guard thay vì vô hiệu nước đi hợp lệ.
  * Trả về true nếu chính request này chốt được ván.
  */
@@ -423,29 +142,13 @@ async function finalize(
 ): Promise<boolean> {
   const { game, moveRows, white, black, rules } = loaded;
   const now = Date.now();
-  const rated = result === "white" || result === "black" || result === "draw";
-  const variant = game.variant as Variant;
-
-  let whiteDelta = 0;
-  let blackDelta = 0;
-  if (rated) {
-    const wStats = userVariantStats(white, variant);
-    const bStats = userVariantStats(black, variant);
-    ({ whiteDelta, blackDelta } = eloChanges(
-      game.whiteEloBefore ?? wStats.elo,
-      game.blackEloBefore ?? bStats.elo,
-      wStats.gamesPlayed,
-      bStats.gamesPlayed,
-      result,
-    ));
-  }
 
   const pgn =
     moveRows.length > 0 || rules.ply() > 0
       ? rules.buildPgn(
           white.username,
           black.username,
-          rated ? result : "draw",
+          result === "aborted" ? "draw" : result,
           game.timeControl,
           game.startedAt,
         )
@@ -461,8 +164,6 @@ async function finalize(
         termination,
         finalFen: rules.fen(),
         endedAt: now,
-        eloChange: rated ? whiteDelta : 0,
-        blackEloChange: rated ? blackDelta : 0,
         pgn,
         drawOfferFrom: null,
         ...clockOverride,
@@ -473,37 +174,10 @@ async function finalize(
           eq(games.status, "active"),
           eq(games.lastPly, game.lastPly),
         ),
-      );
-    if (updated.rowsAffected === 0) return; // request khác đã chốt / có nước mới
+      )
+      .returning({ id: games.id });
+    if (updated.length === 0) return; // request khác đã chốt / có nước mới
     won = true;
-
-    if (rated) {
-      const sides: [UserRow, number, "white" | "black"][] = [
-        [white, whiteDelta, "white"],
-        [black, blackDelta, "black"],
-      ];
-      for (const [u, delta, winRes] of sides) {
-        const keys = VARIANT_STATS[variant];
-        const stats = userVariantStats(u, variant);
-        const outcome =
-          result === "draw" ? "draws" : result === winRes ? "wins" : "losses";
-        await tx
-          .update(users)
-          .set({
-            [keys.elo]: stats.elo + delta,
-            [keys.games]: stats.gamesPlayed + 1,
-            [keys[outcome]]: (u[keys[outcome]] as number) + 1,
-          })
-          .where(eq(users.id, u.id));
-        await tx.insert(ratingHistory).values({
-          userId: u.id,
-          elo: stats.elo + delta,
-          variant,
-          gameId: game.id,
-          createdAt: now,
-        });
-      }
-    }
   });
 
   if (!won) return false;
@@ -513,8 +187,6 @@ async function finalize(
   game.result = result;
   game.termination = termination;
   game.endedAt = now;
-  game.eloChange = rated ? whiteDelta : 0;
-  game.blackEloChange = rated ? blackDelta : 0;
   game.drawOfferFrom = null;
   if (clockOverride?.whiteMs !== undefined) game.whiteMs = clockOverride.whiteMs;
   if (clockOverride?.blackMs !== undefined) game.blackMs = clockOverride.blackMs;
@@ -534,14 +206,14 @@ async function finishByClock(loaded: Loaded, loser: Color): Promise<void> {
 }
 
 /**
- * Các phán quyết lazy — PHẢI gọi TRƯỚC heartbeat của người request: phán xử
+ * Các phán quyết lazy - PHẢI gọi TRƯỚC heartbeat của người request: phán xử
  * dựa trên lastSeen đọc từ DB, nếu heartbeat trước thì người bỏ ván lâu quay
  * lại poll sẽ tự "tẩy trắng" mình và đảo ngược kết quả forfeit/huỷ ván.
  */
 async function applyLazyRulings(loaded: Loaded, now: number): Promise<void> {
   const { game, rules } = loaded;
   if (game.status !== "active") return;
-  if (loaded.torn) return; // snapshot rách — không phán quyết trên đồng hồ cũ
+  if (loaded.torn) return; // snapshot rách - không phán quyết trên đồng hồ cũ
 
   // 0. Ván đã kết thúc tự nhiên nhưng finalize trước đó hụt (process chết
   // giữa transaction ghi nước và transaction chốt ván) → chốt lại tại đây,
@@ -631,7 +303,6 @@ function buildState(
         ? game.whiteLastSeen
         : game.blackLastSeen;
 
-  const rated = finished && game.result !== "aborted" && game.result !== null;
   return {
     game_id: game.id,
     variant: game.variant as Variant,
@@ -640,12 +311,10 @@ function buildState(
     white: {
       id: white.id,
       username: white.username,
-      elo: game.whiteEloBefore ?? 1200,
     },
     black: {
       id: black.id,
       username: black.username,
-      elo: game.blackEloBefore ?? 1200,
     },
     your_color: yourColor,
     moves: moveRows.map((m) => ({ ply: m.ply, san: m.san, uci: m.uci })),
@@ -660,14 +329,6 @@ function buildState(
     disconnect_forfeit_ms: DISCONNECT_FORFEIT_MS,
     result: game.result,
     termination: game.termination,
-    white_elo_change: rated ? game.eloChange : finished ? 0 : null,
-    black_elo_change: rated ? game.blackEloChange : finished ? 0 : null,
-    white_new_elo: rated
-      ? (game.whiteEloBefore ?? 1200) + (game.eloChange ?? 0)
-      : null,
-    black_new_elo: rated
-      ? (game.blackEloBefore ?? 1200) + (game.blackEloChange ?? 0)
-      : null,
     score_a: scoreA,
     score_b: scoreB,
   };
@@ -725,7 +386,7 @@ export async function playMove(
   const { game, moveRows, rules } = loaded;
 
   if (game.status !== "active") return rejected(loaded, user.id, "game_over", now);
-  // snapshot rách: đồng hồ trong row thuộc thế cờ cũ — không được trừ giờ
+  // snapshot rách: đồng hồ trong row thuộc thế cờ cũ - không được trừ giờ
   // trên đó; từ chối để client sync lại nhịp sau
   if (loaded.torn) return rejected(loaded, user.id, "ply_mismatch", now);
   if (color === null) return rejected(loaded, user.id, "not_in_game", now);
@@ -748,7 +409,7 @@ export async function playMove(
 
   const applied = rules.tryMove(uci);
   if (applied === null) {
-    // không trừ giờ cho nước bất hợp lệ — turn_started_at giữ nguyên
+    // không trừ giờ cho nước bất hợp lệ - turn_started_at giữ nguyên
     return rejected(loaded, user.id, "illegal", now);
   }
 
@@ -773,8 +434,9 @@ export async function playMove(
           eq(games.status, "active"),
           eq(games.lastPly, ply - 1), // guard chống double-submit song song
         ),
-      );
-    if (updated.rowsAffected === 0) {
+      )
+      .returning({ id: games.id });
+    if (updated.length === 0) {
       throw new ApiError(409, "PLY_CONFLICT", "Nước đi bị trùng");
     }
     await tx.insert(moves).values({
@@ -812,7 +474,7 @@ export async function playMove(
 }
 
 export async function resign(gameId: string, user: UserRow): Promise<LiveState> {
-  // finalize có guard lastPly — nếu trượt vì một nước vừa commit song song,
+  // finalize có guard lastPly - nếu trượt vì một nước vừa commit song song,
   // nạp lại snapshot mới và đầu hàng lại (đầu hàng vẫn hợp lệ sau nước đó).
   for (let attempt = 0; attempt < 3; attempt++) {
     const loaded = await loadGame(gameId);
@@ -865,7 +527,7 @@ export async function drawAction(
       game.drawOfferFrom = null;
       return buildState(loaded, user.id, now);
     }
-    // accept — finalize trượt guard lastPly (nước vừa commit song song, offer
+    // accept - finalize trượt guard lastPly (nước vừa commit song song, offer
     // có thể đã bị nước của bên nhận vô hiệu) → nạp lại và xét lại từ đầu.
     if (loaded.torn) continue;
     if (await finalize(loaded, "draw", "agreement")) {

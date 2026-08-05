@@ -1,5 +1,5 @@
 /**
- * Lỗi API thống nhất — thân JSON {"error": {"code", "message"}} y hệt
+ * Lỗi API thống nhất - thân JSON {"error": {"code", "message"}} y hệt
  * backend FastAPI cũ để client (lib/api.ts) không phải đổi gì.
  */
 

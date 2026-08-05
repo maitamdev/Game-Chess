@@ -18,7 +18,7 @@ interface Pending {
   timer: ReturnType<typeof setTimeout> | null;
 }
 
-/** Cầu nối worker engine cờ thú — cùng hợp đồng với các engine khác. */
+/** Cầu nối worker engine cờ thú - cùng hợp đồng với các engine khác. */
 export function useJungleEngine(
   onResult: (kind: JgRequestKind, move: JgEngineMove) => void,
 ) {

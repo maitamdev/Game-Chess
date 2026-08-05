@@ -34,7 +34,7 @@ interface DragState {
 
 interface DyingPiece extends TrackedXqPiece {
   diedAt: number;
-  /** góc counter-rotate tại thời điểm bị ăn — xoay tiếp theo bàn khi tự xoay */
+  /** góc counter-rotate tại thời điểm bị ăn - xoay tiếp theo bàn khi tự xoay */
   bornRotate: number;
 }
 
@@ -163,7 +163,7 @@ export default function XiangqiBoard({
     setTargets(new Map());
   }, []);
 
-  // góc counter-rotate của LẦN RENDER TRƯỚC — quân bị ăn trong nước có tự
+  // góc counter-rotate của LẦN RENDER TRƯỚC - quân bị ăn trong nước có tự
   // xoay phải khởi đầu ở góc cũ rồi xoay cùng bàn, không nhảy phắt 180°
   const prevRotatedRef = useRef(rotated);
 

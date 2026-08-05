@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Hướng dẫn chơi — Kỳ Đài",
+  title: "Hướng dẫn chơi - Kỳ Đài",
   description:
     "Luật chơi và hướng dẫn thao tác cho cờ vua, cờ tướng, cờ caro, cờ thú và ô ăn quan trên Kỳ Đài.",
 };
@@ -14,7 +14,7 @@ const guides = [
     glyph: "♞",
     serif: false,
     description:
-      "Cách đi 6 loại quân, nhập thành, bắt tốt qua đường, phong cấp — và các kết cục thắng, hoà.",
+      "Cách đi 6 loại quân, nhập thành, bắt tốt qua đường, phong cấp - và các kết cục thắng, hoà.",
   },
   {
     href: "/xiangqi/guide",
@@ -30,7 +30,7 @@ const guides = [
     glyph: "✕",
     serif: false,
     description:
-      "Bàn 200×200 giao điểm, nối đủ 5 quân liên tiếp là thắng — cùng mẹo pan, zoom trên bàn cờ lớn.",
+      "Bàn 200×200 giao điểm, nối đủ 5 quân liên tiếp là thắng - cùng mẹo pan, zoom trên bàn cờ lớn.",
   },
   {
     href: "/jungle/guide",
@@ -38,7 +38,7 @@ const guides = [
     glyph: "🦁",
     serif: false,
     description:
-      "Cấp bậc 8 con thú, Chuột ăn Voi, nhảy sông, bẫy và hang — luật đầy đủ của rừng xanh.",
+      "Cấp bậc 8 con thú, Chuột ăn Voi, nhảy sông, bẫy và hang - luật đầy đủ của rừng xanh.",
   },
   {
     href: "/oanquan/guide",
@@ -103,7 +103,7 @@ export default function GuideIndexPage() {
             Góc Giải Trí
           </h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
-            2048, Dò mìn, Lật thẻ — mỗi trang minigame có sẵn mục “Cách chơi”
+            2048, Dò mìn, Lật thẻ - mỗi trang minigame có sẵn mục “Cách chơi”
             ngay bên dưới bàn chơi.
           </p>
           <span className="mt-4 text-xs text-brass">Vào chơi ngay →</span>

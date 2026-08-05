@@ -18,7 +18,7 @@ interface Pending {
   timer: ReturnType<typeof setTimeout> | null;
 }
 
-/** Cầu nối worker engine caro — cùng hợp đồng với hai engine kia. */
+/** Cầu nối worker engine caro - cùng hợp đồng với hai engine kia. */
 export function useCaroEngine(
   onResult: (kind: CaroRequestKind, move: CaroEngineMove) => void,
 ) {

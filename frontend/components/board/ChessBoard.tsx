@@ -24,7 +24,7 @@ export interface ChessBoardProps {
   lastMove: { from: SquareName; to: SquareName } | null;
   /** Ô vua đang bị chiếu, nếu có */
   checkSquare: SquareName | null;
-  /** Nước gợi ý từ engine — tô sáng hai ô */
+  /** Nước gợi ý từ engine - tô sáng hai ô */
   hint?: { from: SquareName; to: SquareName } | null;
   /** Cho phép đặt nước đi trước lượt cho màu này khi chưa tới lượt họ (mục 5.3) */
   premoveColor?: Color | null;
@@ -97,13 +97,13 @@ export default function ChessBoard({
     return map;
   }, [pieces]);
 
-  // Góc counter-rotate của lần render trước — quân bị ăn trong nước có
+  // Góc counter-rotate của lần render trước - quân bị ăn trong nước có
   // tự xoay phải khởi đầu ở góc cũ rồi xoay cùng bàn.
   const prevRotatedRef = useRef(rotated);
 
   // Quân bị ăn: giữ lại 140ms để hoạt ảnh thu nhỏ + mờ dần.
   // Timer không bị hủy theo vòng đời effect (tránh entry kẹt lại khi có
-  // nước đi kế tiếp trong 160ms — ví dụ tua nhanh lịch sử); chỉ dọn khi unmount.
+  // nước đi kế tiếp trong 160ms - ví dụ tua nhanh lịch sử); chỉ dọn khi unmount.
   const prevPiecesRef = useRef<TrackedPiece[]>(pieces);
   const dyingTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   useEffect(() => {
@@ -214,7 +214,7 @@ export default function ChessBoard({
   );
 
   // Toạ độ cục bộ từ sự kiện con trỏ. Bù xoay bằng ma trận transform
-  // thực tế (nghịch đảo) thay vì cờ nhị phân — đúng cả khi bàn đang
+  // thực tế (nghịch đảo) thay vì cờ nhị phân - đúng cả khi bàn đang
   // ở góc trung gian giữa hoạt ảnh xoay 400ms.
   const localPoint = useCallback((e: { clientX: number; clientY: number }) => {
     const el = boardRef.current;
@@ -273,7 +273,7 @@ export default function ChessBoard({
         try {
           boardRef.current?.setPointerCapture(e.pointerId);
         } catch {
-          // pointerId không còn hoạt động (một số thiết bị cảm ứng) — bỏ qua
+          // pointerId không còn hoạt động (một số thiết bị cảm ứng) - bỏ qua
         }
       } else {
         clearSelection();

@@ -13,14 +13,14 @@ import {
 } from "@/lib/oanquan/rules";
 
 /**
- * Bàn ô ăn quan — 2 ô quan bán nguyệt hai đầu + 2 hàng × 5 ô dân,
+ * Bàn ô ăn quan - 2 ô quan bán nguyệt hai đầu + 2 hàng × 5 ô dân,
  * chất giấy dó cùng tông với các bàn khác. Tương tác 2 bước:
  * nhấp ô dân của mình → hiện 2 mũi tên chiều rải → nhấp mũi tên để đi.
  * Hoạt ảnh: nhịp rải lan theo sowPath, ô bị ăn nháy đỏ gạch.
  *
  * Bố cục ô trong vòng (chỉ số của rules):
- *   hàng trên  trái→phải: 11 10 9 8 7   (bên B — Xanh)
- *   hàng dưới trái→phải:  1  2 3 4 5   (bên A — Đỏ)
+ *   hàng trên  trái→phải: 11 10 9 8 7   (bên B - Xanh)
+ *   hàng dưới trái→phải:  1  2 3 4 5   (bên A - Đỏ)
  *   ô 0 = quan trái (bán nguyệt), ô 6 = quan phải.
  */
 

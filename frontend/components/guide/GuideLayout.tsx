@@ -42,7 +42,7 @@ export type GuideData = {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mt-12 mb-4 font-[family-name:var(--font-display)] text-lg font-medium">
+    <h2 className="mb-4 mt-12 font-[family-name:var(--font-display)] text-xl font-bold tracking-[-0.025em]">
       {children}
     </h2>
   );
@@ -51,7 +51,13 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 function Glyph({ glyph }: { glyph: GuideGlyph }) {
   if (glyph.img) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={glyph.img} alt="" className="h-9 w-9" />;
+    return (
+      <img
+        src={glyph.img}
+        alt=""
+        className="h-9 w-9 rounded-full object-cover ring-1 ring-white/10"
+      />
+    );
   }
   return (
     <span
@@ -83,7 +89,7 @@ function RuleList({ items }: { items: string[] }) {
 
 export default function GuideLayout({ data }: { data: GuideData }) {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
+    <div className="app-shell max-w-3xl py-10 sm:py-14">
       <Link
         href={data.backHref}
         className="rounded-[6px] text-sm text-muted transition-colors hover:text-brass"
@@ -91,12 +97,12 @@ export default function GuideLayout({ data }: { data: GuideData }) {
         ← {data.backLabel}
       </Link>
 
-      <h1 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-semibold leading-tight">
+      <h1 className="mt-5 font-[family-name:var(--font-display)] text-4xl font-extrabold leading-tight tracking-[-0.04em]">
         {data.title}
       </h1>
       <p className="mt-3 max-w-2xl text-base text-muted">{data.tagline}</p>
 
-      <div className="mt-10 rounded-[10px] border border-line border-l-2 border-l-brass bg-slate p-5">
+      <div className="mt-10 rounded-[14px] border border-brass/35 bg-[linear-gradient(135deg,rgba(214,174,85,.1),rgba(16,28,35,.94))] p-6">
         <span className="text-xs font-medium uppercase tracking-wide text-muted">
           Mục tiêu
         </span>
@@ -113,7 +119,7 @@ export default function GuideLayout({ data }: { data: GuideData }) {
       </div>
 
       <SectionHeading>{data.piecesTitle}</SectionHeading>
-      <div className="divide-y divide-line rounded-[10px] border border-line bg-slate">
+      <div className="divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-slate">
         {data.pieces.map((piece) => (
           <div key={piece.name} className="flex gap-4 p-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center">
@@ -143,7 +149,7 @@ export default function GuideLayout({ data }: { data: GuideData }) {
 
       <SectionHeading>Kết thúc ván</SectionHeading>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-[10px] border border-line bg-slate p-5">
+        <div className="rounded-[14px] border border-line bg-slate p-5">
           <h3 className="flex items-center gap-2 text-base font-medium">
             <span aria-hidden className="h-2 w-2 rounded-full bg-sage" />
             Thắng ván
@@ -156,7 +162,7 @@ export default function GuideLayout({ data }: { data: GuideData }) {
             ))}
           </ul>
         </div>
-        <div className="rounded-[10px] border border-line bg-slate p-5">
+        <div className="rounded-[14px] border border-line bg-slate p-5">
           <h3 className="flex items-center gap-2 text-base font-medium">
             <span aria-hidden className="h-2 w-2 rounded-full bg-muted" />
             Hoà
@@ -195,8 +201,8 @@ export default function GuideLayout({ data }: { data: GuideData }) {
             href={mode.href}
             className={
               i === 0
-                ? "flex flex-col rounded-[10px] bg-brass p-4 text-ink transition-[filter] hover:brightness-110"
-                : "flex flex-col rounded-[10px] border border-line bg-slate p-4 transition-colors hover:border-brass"
+                ? "flex flex-col rounded-[12px] bg-brass p-5 text-ink transition-[filter] hover:brightness-110"
+                : "flex flex-col rounded-[12px] border border-line bg-slate p-5 transition-colors hover:border-brass"
             }
           >
             <span className="text-sm font-medium">{mode.label}</span>

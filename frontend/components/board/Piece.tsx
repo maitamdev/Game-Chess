@@ -23,13 +23,13 @@ export function rankOf(square: string): number {
 
 interface PieceProps {
   piece: TrackedPiece;
-  /** Bàn đang xoay 180° (hướng nhìn quân đen) — quân phải xoay ngược lại */
+  /** Bàn đang xoay 180° (hướng nhìn quân đen) - quân phải xoay ngược lại */
   counterRotated: boolean;
   /** Đặt ngay lập tức, không hoạt ảnh trượt (dùng khi thả quân sau kéo) */
   instant?: boolean;
-  /** Quân đang bị kéo — hiện bóng mờ 30% ở ô gốc */
+  /** Quân đang bị kéo - hiện bóng mờ 30% ở ô gốc */
   ghost?: boolean;
-  /** Quân vừa bị ăn — thu nhỏ về 0.6 và mờ dần trong 140ms */
+  /** Quân vừa bị ăn - thu nhỏ về 0.6 và mờ dần trong 140ms */
   dying?: boolean;
   /** Góc counter-rotate tại thời điểm bị ăn (khi nước ăn quân kèm tự xoay bàn) */
   bornRotate?: number;

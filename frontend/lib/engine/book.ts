@@ -1,7 +1,7 @@
 import { Chess } from "chess.js";
 
 /**
- * Bộ khai cuộc cho mức 5 — 20 biến phổ biến (mục 6).
+ * Bộ khai cuộc cho mức 5 - 20 biến phổ biến (mục 6).
  * Tra theo FEN (4 trường đầu) nên bắt được cả chuyển vị.
  */
 const LINES: string[] = [

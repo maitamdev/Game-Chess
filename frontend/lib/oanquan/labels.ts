@@ -2,12 +2,12 @@ import type { OqColor } from "./rules";
 import { playSound } from "@/lib/sounds";
 
 export const OQ_TERMINATION_LABELS: Record<string, string> = {
-  quan_out: "Hết quan tàn dân — tính sổ",
-  move_limit: "Quá 400 nước — tính sổ",
+  quan_out: "Hết quan tàn dân - tính sổ",
+  move_limit: "Quá 400 nước - tính sổ",
   timeout: "Hết giờ",
   resignation: "Đầu hàng",
   agreement: "Hoà theo thoả thuận",
-  aborted: "Không có nước đi nào — không tính Elo",
+  aborted: "Ván chưa bắt đầu",
 };
 
 /** Quy ước hiển thị: A = Đỏ ngồi dưới, B = Xanh ngồi trên. */

@@ -33,7 +33,7 @@ export default function LocalPlayPage() {
   const [pendingClock, setPendingClock] = useState<TimeControl | null>(null);
   const [modalDismissed, setModalDismissed] = useState(false);
 
-  // Store dùng chung giữa các chế độ — vào trang thì bắt đầu từ màn cấu hình
+  // Store dùng chung giữa các chế độ - vào trang thì bắt đầu từ màn cấu hình
   useEffect(() => {
     useGameStore.setState({ status: "idle" });
   }, []);
@@ -78,7 +78,7 @@ export default function LocalPlayPage() {
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
           Thay phiên nhau trên cùng thiết bị. Bàn cờ tự xoay về phía người đang
-          đi — có thể tắt nếu muốn giữ nguyên hướng.
+          đi - có thể tắt nếu muốn giữ nguyên hướng.
         </p>
         <div className="mt-8 max-w-sm rounded-[10px] border border-line bg-slate p-6">
           <p className="text-sm font-medium">Đồng hồ</p>

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { requireUser } from "@/lib/server/auth";
+import { requirePlayer } from "@/lib/server/session";
 import { ApiError, handle } from "@/lib/server/errors";
 import { playMove } from "@/lib/server/live";
 
@@ -9,7 +9,7 @@ const MoveIn = z.object({ uci: z.string().min(2).max(10), ply: z.number().int() 
 
 export const POST = handle(
   async (req: NextRequest, ctx: { params: Promise<{ gameId: string }> }) => {
-    const user = await requireUser(req);
+    const user = await requirePlayer(req);
     const { gameId } = await ctx.params;
     const parsed = MoveIn.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) {

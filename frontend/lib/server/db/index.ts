@@ -1,36 +1,55 @@
 /**
- * Kết nối DB dùng chung cho route handlers.
+ * Kết nối PostgreSQL của Supabase qua connection string phía server.
  *
- * - Local dev: DATABASE_URL không đặt → file SQLite ./local.db.
- * - Vercel + Turso: DATABASE_URL=libsql://<db>.turso.io + DATABASE_AUTH_TOKEN.
- *
- * Cache trên globalThis để Next dev không mở lại kết nối sau mỗi hot-reload.
+ * Dùng Supabase Transaction Pooler khi deploy serverless. Không đưa
+ * DATABASE_URL ra biến NEXT_PUBLIC_*.
  */
 
-import { createClient, type Client } from "@libsql/client";
-import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import postgres, { type Sql } from "postgres";
 
 import * as schema from "./schema";
 
-export type Db = LibSQLDatabase<typeof schema>;
+export type Db = PostgresJsDatabase<typeof schema>;
 
 const globalForDb = globalThis as unknown as {
-  __kydaiClient?: Client;
+  __kydaiSql?: Sql;
   __kydaiDb?: Db;
 };
 
-function makeClient(): Client {
-  return createClient({
-    url: process.env.DATABASE_URL ?? "file:./local.db",
-    authToken: process.env.DATABASE_AUTH_TOKEN,
-  });
-}
+const connectionString =
+  process.env.DATABASE_URL ??
+  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+const configuredPoolMax = Number(process.env.DATABASE_POOL_MAX);
+const poolMax =
+  Number.isInteger(configuredPoolMax) &&
+  configuredPoolMax >= 1 &&
+  configuredPoolMax <= 20
+    ? configuredPoolMax
+    : process.env.NODE_ENV === "production"
+      ? 5
+      : 2;
+const configuredConnectTimeout = Number(process.env.DATABASE_CONNECT_TIMEOUT);
+const connectTimeout =
+  Number.isInteger(configuredConnectTimeout) &&
+  configuredConnectTimeout >= 1 &&
+  configuredConnectTimeout <= 60
+    ? configuredConnectTimeout
+    : 10;
 
-export const client: Client = globalForDb.__kydaiClient ?? makeClient();
-export const db: Db = globalForDb.__kydaiDb ?? drizzle(client, { schema });
+export const client =
+  globalForDb.__kydaiSql ??
+  postgres(connectionString, {
+    prepare: false,
+    max: poolMax,
+    idle_timeout: 20,
+    connect_timeout: connectTimeout,
+  });
+
+export const db = globalForDb.__kydaiDb ?? drizzle(client, { schema });
 
 if (process.env.NODE_ENV !== "production") {
-  globalForDb.__kydaiClient = client;
+  globalForDb.__kydaiSql = client;
   globalForDb.__kydaiDb = db;
 }
 

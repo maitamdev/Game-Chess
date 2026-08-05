@@ -1,177 +1,195 @@
 /**
- * Schema Drizzle (SQLite/libSQL) — port 1-1 từ SQLAlchemy models cũ,
- * cộng thêm các cột "live" để ván online chạy không cần tiến trình thường trực
- * (Vercel serverless): đồng hồ, heartbeat, đề nghị hoà đều nằm trong DB,
- * mọi phán quyết (hết giờ, huỷ ván, xử thua rớt mạng) thực hiện lazy khi
- * có request đọc/ghi ván.
+ * Schema PostgreSQL dùng cho Supabase.
  *
- * Thời gian lưu dạng epoch milliseconds (integer) — serializer đổi sang ISO.
+ * `players` chỉ lưu phiên khách tạm thời với tên hiển thị. Trình duyệt nhận
+ * cookie phiên được ký bởi server.
  */
 
+import { sql } from "drizzle-orm";
 import {
+  bigint,
+  boolean,
+  check,
   index,
   integer,
-  sqliteTable,
+  jsonb,
+  pgTable,
+  serial,
   text,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+  uuid,
+} from "drizzle-orm/pg-core";
 
-export const users = sqliteTable(
-  "users",
+const epoch = (name: string) => bigint(name, { mode: "number" });
+
+export const players = pgTable(
+  "players",
   {
-    id: text("id").primaryKey(),
-    username: text("username").notNull(),
-    email: text("email").notNull(),
-    passwordHash: text("password_hash").notNull(),
-    // thống kê cờ vua
-    elo: integer("elo").notNull().default(1200),
-    gamesPlayed: integer("games_played").notNull().default(0),
-    wins: integer("wins").notNull().default(0),
-    losses: integer("losses").notNull().default(0),
-    draws: integer("draws").notNull().default(0),
-    // thống kê cờ tướng
-    xqElo: integer("xq_elo").notNull().default(1200),
-    xqGamesPlayed: integer("xq_games_played").notNull().default(0),
-    xqWins: integer("xq_wins").notNull().default(0),
-    xqLosses: integer("xq_losses").notNull().default(0),
-    xqDraws: integer("xq_draws").notNull().default(0),
-    // thống kê cờ caro
-    caroElo: integer("caro_elo").notNull().default(1200),
-    caroGamesPlayed: integer("caro_games_played").notNull().default(0),
-    caroWins: integer("caro_wins").notNull().default(0),
-    caroLosses: integer("caro_losses").notNull().default(0),
-    caroDraws: integer("caro_draws").notNull().default(0),
-    // thống kê cờ thú
-    jgElo: integer("jg_elo").notNull().default(1200),
-    jgGamesPlayed: integer("jg_games_played").notNull().default(0),
-    jgWins: integer("jg_wins").notNull().default(0),
-    jgLosses: integer("jg_losses").notNull().default(0),
-    jgDraws: integer("jg_draws").notNull().default(0),
-    // thống kê ô ăn quan
-    oqElo: integer("oq_elo").notNull().default(1200),
-    oqGamesPlayed: integer("oq_games_played").notNull().default(0),
-    oqWins: integer("oq_wins").notNull().default(0),
-    oqLosses: integer("oq_losses").notNull().default(0),
-    oqDraws: integer("oq_draws").notNull().default(0),
-    createdAt: integer("created_at").notNull(),
+    id: uuid("id").primaryKey(),
+    username: text("display_name").notNull(),
+    createdAt: epoch("created_at").notNull(),
+    lastSeen: epoch("last_seen").notNull(),
   },
-  (t) => [
-    uniqueIndex("ux_users_username").on(t.username),
-    uniqueIndex("ux_users_email").on(t.email),
-    index("ix_users_elo").on(t.elo),
+  (table) => [
+    index("ix_players_last_seen").on(table.lastSeen),
+    check(
+      "ck_players_display_name",
+      sql`char_length(${table.username}) between 2 and 24`,
+    ),
   ],
 );
 
-export const games = sqliteTable(
+// Alias tạm để phần luật ván cũ tiếp tục dùng chung model người chơi khách.
+export const users = players;
+
+export const games = pgTable(
   "games",
   {
-    id: text("id").primaryKey(),
-    whiteId: text("white_id")
+    id: uuid("id").primaryKey(),
+    whiteId: uuid("white_id")
       .notNull()
-      .references(() => users.id),
-    blackId: text("black_id")
+      .references(() => players.id),
+    blackId: uuid("black_id")
       .notNull()
-      .references(() => users.id),
-    // 'chess' | 'xiangqi' | 'caro' | 'jungle' | 'oanquan'
-    // (cờ tướng/cờ thú: white = Đỏ đi trước; ô ăn quan: white = bên A)
+      .references(() => players.id),
     variant: text("variant").notNull().default("chess"),
     timeControl: text("time_control").notNull(),
-    // 'white' | 'black' | 'draw' | 'aborted' | null khi đang chơi
     result: text("result"),
-    // 'checkmate','resignation','timeout','stalemate','agreement','repetition',
-    // 'fifty_move','insufficient','aborted','perpetual_check','den',
-    // 'no_pieces','five_in_row','all_quan_captured','max_ply'
     termination: text("termination"),
     pgn: text("pgn"),
     finalFen: text("final_fen"),
-    whiteEloBefore: integer("white_elo_before"),
-    blackEloBefore: integer("black_elo_before"),
-    // thay đổi Elo của bên trắng (giữ tên cột cũ)
-    eloChange: integer("elo_change"),
-    // thay đổi Elo bên đen (K-factor hai bên có thể khác nhau)
-    blackEloChange: integer("black_elo_change"),
-    startedAt: integer("started_at").notNull(),
-    endedAt: integer("ended_at"),
-
-    // ---- trạng thái live (thay cho GameSession trong RAM) ----
-    status: text("status").notNull().default("active"), // active | finished
+    startedAt: epoch("started_at").notNull(),
+    endedAt: epoch("ended_at"),
+    status: text("status").notNull().default("active"),
     whiteMs: integer("white_ms").notNull().default(0),
     blackMs: integer("black_ms").notNull().default(0),
     incrementMs: integer("increment_ms").notNull().default(0),
-    // null = đồng hồ chưa chạy (trước nước đi đầu tiên)
-    turnStartedAt: integer("turn_started_at"),
+    turnStartedAt: epoch("turn_started_at"),
     lastPly: integer("last_ply").notNull().default(0),
-    drawOfferFrom: text("draw_offer_from"), // 'white' | 'black' | null
-    whiteLastSeen: integer("white_last_seen"),
-    blackLastSeen: integer("black_last_seen"),
+    drawOfferFrom: text("draw_offer_from"),
+    whiteLastSeen: epoch("white_last_seen"),
+    blackLastSeen: epoch("black_last_seen"),
   },
-  (t) => [
-    index("ix_games_white_id").on(t.whiteId),
-    index("ix_games_black_id").on(t.blackId),
-    index("ix_games_started_at").on(t.startedAt),
-    index("ix_games_status").on(t.status),
+  (table) => [
+    index("ix_games_white_id").on(table.whiteId),
+    index("ix_games_black_id").on(table.blackId),
+    index("ix_games_started_at").on(table.startedAt),
+    index("ix_games_status").on(table.status),
+    check(
+      "ck_games_variant",
+      sql`${table.variant} in ('chess', 'xiangqi', 'caro', 'jungle', 'oanquan')`,
+    ),
+    check("ck_games_status", sql`${table.status} in ('active', 'finished')`),
+    check(
+      "ck_games_result",
+      sql`${table.result} is null or ${table.result} in ('white', 'black', 'draw', 'aborted')`,
+    ),
+    check(
+      "ck_games_clock_values",
+      sql`${table.whiteMs} >= 0 and ${table.blackMs} >= 0 and ${table.incrementMs} >= 0 and ${table.lastPly} >= 0`,
+    ),
   ],
 );
 
-export const moves = sqliteTable(
+export const moves = pgTable(
   "moves",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    gameId: text("game_id")
+    id: serial("id").primaryKey(),
+    gameId: uuid("game_id")
       .notNull()
       .references(() => games.id, { onDelete: "cascade" }),
-    ply: integer("ply").notNull(), // 1, 2, 3...
+    ply: integer("ply").notNull(),
     san: text("san").notNull(),
     uci: text("uci").notNull(),
     fenAfter: text("fen_after").notNull(),
     timeLeftMs: integer("time_left_ms").notNull(),
     evaluation: integer("evaluation"),
   },
-  (t) => [index("ix_moves_game_ply").on(t.gameId, t.ply)],
-);
-
-export const ratingHistory = sqliteTable(
-  "rating_history",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    elo: integer("elo").notNull(),
-    variant: text("variant").notNull().default("chess"),
-    gameId: text("game_id").references(() => games.id),
-    createdAt: integer("created_at").notNull(),
-  },
-  (t) => [index("ix_rating_history_user").on(t.userId, t.createdAt)],
-);
-
-/**
- * Hàng đợi ghép cặp — thay cho Matchmaker trong RAM. Không có vòng lặp nền:
- * mỗi lần join/poll status đều thử ghép cặp; entry không poll quá hạn bị dọn.
- */
-export const queueEntries = sqliteTable(
-  "queue_entries",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    variant: text("variant").notNull(),
-    timeControl: text("time_control").notNull(),
-    elo: integer("elo").notNull(),
-    joinedAt: integer("joined_at").notNull(),
-    lastSeen: integer("last_seen").notNull(),
-    // đã ghép xong: chờ chính chủ poll nhận game_id rồi xoá entry
-    matchedGameId: text("matched_game_id"),
-  },
-  (t) => [
-    uniqueIndex("ux_queue_user").on(t.userId),
-    index("ix_queue_bucket").on(t.variant, t.timeControl),
+  (table) => [
+    uniqueIndex("ux_moves_game_ply").on(table.gameId, table.ply),
+    check("ck_moves_ply", sql`${table.ply} > 0`),
+    check("ck_moves_time_left", sql`${table.timeLeftMs} >= 0`),
   ],
 );
 
-export type UserRow = typeof users.$inferSelect;
+export const cardRooms = pgTable(
+  "game_rooms",
+  {
+    id: uuid("id").primaryKey(),
+    code: text("code").notNull(),
+    gameType: text("game_type").notNull(),
+    title: text("title").notNull(),
+    isPublic: boolean("is_public").notNull().default(true),
+    hostId: uuid("host_player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    maxPlayers: integer("max_players").notNull(),
+    status: text("status").notNull().default("waiting"),
+    timeControl: text("time_control"),
+    gameId: uuid("game_id").references(() => games.id),
+    stateJson: jsonb("state_json"),
+    version: integer("version").notNull().default(0),
+    createdAt: epoch("created_at").notNull(),
+    updatedAt: epoch("updated_at").notNull(),
+    expiresAt: epoch("expires_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("ux_game_rooms_code").on(table.code),
+    index("ix_game_rooms_public").on(table.isPublic, table.status, table.updatedAt),
+    index("ix_game_rooms_expires").on(table.expiresAt),
+    check(
+      "ck_game_rooms_code",
+      sql`${table.code} ~ '^[A-HJ-NP-Z2-9]{6}$'`,
+    ),
+    check(
+      "ck_game_rooms_type",
+      sql`${table.gameType} in ('chess', 'xiangqi', 'caro', 'jungle', 'oanquan', 'uno')`,
+    ),
+    check(
+      "ck_game_rooms_status",
+      sql`${table.status} in ('waiting', 'playing', 'finished')`,
+    ),
+    check(
+      "ck_game_rooms_shape",
+      sql`(
+        (${table.gameType} = 'uno' and ${table.maxPlayers} between 2 and 4 and ${table.timeControl} is null)
+        or
+        (${table.gameType} <> 'uno' and ${table.maxPlayers} = 2 and ${table.timeControl} is not null)
+      )`,
+    ),
+    check("ck_game_rooms_version", sql`${table.version} >= 0`),
+    check(
+      "ck_game_rooms_lifetime",
+      sql`${table.expiresAt} > ${table.createdAt} and ${table.updatedAt} >= ${table.createdAt}`,
+    ),
+  ],
+);
+
+export const cardRoomPlayers = pgTable(
+  "room_players",
+  {
+    id: serial("id").primaryKey(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => cardRooms.id, { onDelete: "cascade" }),
+    userId: uuid("player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    seat: integer("seat").notNull(),
+    joinedAt: epoch("joined_at").notNull(),
+    lastSeen: epoch("last_seen").notNull(),
+  },
+  (table) => [
+    uniqueIndex("ux_room_player").on(table.roomId, table.userId),
+    uniqueIndex("ux_room_seat").on(table.roomId, table.seat),
+    index("ix_room_players_player").on(table.userId),
+    check("ck_room_players_seat", sql`${table.seat} between 0 and 3`),
+  ],
+);
+
+export type UserRow = typeof players.$inferSelect;
+export type PlayerRow = UserRow;
 export type GameRow = typeof games.$inferSelect;
 export type MoveRow = typeof moves.$inferSelect;
-export type RatingHistoryRow = typeof ratingHistory.$inferSelect;
-export type QueueEntryRow = typeof queueEntries.$inferSelect;
+export type CardRoomRow = typeof cardRooms.$inferSelect;
+export type CardRoomPlayerRow = typeof cardRoomPlayers.$inferSelect;

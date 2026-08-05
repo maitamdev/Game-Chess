@@ -24,7 +24,7 @@ export interface SquareProps {
 }
 
 /**
- * Một ô bàn cờ — mục 11. Ô là <button> để Tab/Enter hoạt động;
+ * Một ô bàn cờ - mục 11. Ô là <button> để Tab/Enter hoạt động;
  * mọi tương tác chuột/chạm do ChessBoard xử lý qua pointer events.
  */
 function Square({
@@ -129,7 +129,7 @@ function Square({
           }}
         />
       )}
-      {/* Toạ độ — khung counter-rotate để chữ luôn xuôi chiều người nhìn */}
+      {/* Toạ độ - khung counter-rotate để chữ luôn xuôi chiều người nhìn */}
       {(fileLabel || rankLabel) && (
         <span
           aria-hidden

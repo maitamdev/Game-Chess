@@ -18,7 +18,7 @@ interface Pending {
   timer: ReturnType<typeof setTimeout> | null;
 }
 
-/** Cầu nối worker engine cờ tướng — cùng hợp đồng với useEngine cờ vua
+/** Cầu nối worker engine cờ tướng - cùng hợp đồng với useEngine cờ vua
  *  (suy nghĩ tối thiểu, stop = terminate + respawn để hủy thật sự). */
 export function useXqEngine(
   onResult: (kind: XqRequestKind, move: XqEngineMove) => void,

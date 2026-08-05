@@ -70,7 +70,7 @@ export default function CaroLocalPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Cờ caro — hai người một máy
+          Cờ caro - hai người một máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
           Bàn 200×200, nối đủ 5 quân liên tiếp là thắng. Kéo bàn để di chuyển,
@@ -146,7 +146,7 @@ export default function CaroLocalPage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : result.winner === "x" ? "✕" : "○"}
+              {result.winner === null ? "½-½" : result.winner === "x" ? "✕" : "○"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {caroResultTitle(result.winner, result.termination)}

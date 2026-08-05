@@ -24,17 +24,17 @@ const LEVELS: LevelDef[] = [
 
 const bestKey = (k: LevelKey) => `kd-domin-best-${k}`;
 
-/* Màu số 1–8 — đủ tương phản trên nền tối */
+/* Màu số 1-8 - đủ tương phản trên nền tối */
 const NUM_COLORS = [
   "",
-  "#6ca0dc", // 1 — xanh dương
-  "#7fbf72", // 2 — xanh lá
-  "#e0694e", // 3 — đỏ gạch
-  "#a98fd8", // 4 — tím
-  "#c8a44a", // 5 — vàng đồng
-  "#5abfb8", // 6 — xanh ngọc
-  "#d884b0", // 7 — hồng
-  "#aab4c0", // 8 — xám sáng
+  "#6ca0dc", // 1 - xanh dương
+  "#7fbf72", // 2 - xanh lá
+  "#e0694e", // 3 - đỏ gạch
+  "#a98fd8", // 4 - tím
+  "#c8a44a", // 5 - vàng đồng
+  "#5abfb8", // 6 - xanh ngọc
+  "#d884b0", // 7 - hồng
+  "#aab4c0", // 8 - xám sáng
 ];
 
 /* ===== Mô hình bàn chơi ===== */
@@ -113,7 +113,7 @@ function floodOpen(cells: Cell[], start: number, rows: number, cols: number): vo
   }
 }
 
-/* ===== Đồng hồ — tự đếm để cả bàn không phải vẽ lại mỗi giây ===== */
+/* ===== Đồng hồ - tự đếm để cả bàn không phải vẽ lại mỗi giây ===== */
 
 function TimerDisplay({
   startedAt,
@@ -211,7 +211,7 @@ export default function DoMinPage() {
       try {
         localStorage.setItem(bestKey(levelKey), String(t));
       } catch {
-        /* bộ nhớ đầy hoặc bị chặn — bỏ qua */
+        /* bộ nhớ đầy hoặc bị chặn - bỏ qua */
       }
     }
     return true;
@@ -232,7 +232,7 @@ export default function DoMinPage() {
     }
 
     if (cur.open) {
-      /* Chord: ô số đã đủ cờ quanh — mở nhanh các ô còn lại */
+      /* Chord: ô số đã đủ cờ quanh - mở nhanh các ô còn lại */
       if (cur.adj === 0) return;
       const nbs = neighborsOf(idx, rows, cols);
       const flags = nbs.reduce((s, n) => s + (cs[n].flag ? 1 : 0), 0);
@@ -328,7 +328,7 @@ export default function DoMinPage() {
 
   const onCellContextMenu = (idx: number) => (e: React.MouseEvent) => {
     e.preventDefault();
-    // Long-press trên di động đã cắm cờ rồi — đừng lật lại lần nữa
+    // Long-press trên di động đã cắm cờ rồi - đừng lật lại lần nữa
     if (Date.now() - lastTouchRef.current < 800) return;
     toggleFlag(idx);
   };
@@ -361,7 +361,7 @@ export default function DoMinPage() {
           Dò Mìn
         </h1>
         <p className="mt-3 text-base text-muted">
-          Mở hết vùng đất an toàn, cắm cờ đúng chỗ chôn mìn — một cú nhấn sai là
+          Mở hết vùng đất an toàn, cắm cờ đúng chỗ chôn mìn - một cú nhấn sai là
           tan tành.
         </p>
       </div>
@@ -393,7 +393,7 @@ export default function DoMinPage() {
           </span>
           <span className="text-muted" title="Thời gian nhanh nhất mức này">
             Kỷ lục:{" "}
-            {best[levelKey] !== null ? `${best[levelKey]}s` : "—"}
+            {best[levelKey] !== null ? `${best[levelKey]}s` : "-"}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ export default function DoMinPage() {
         </div>
       </div>
 
-      {/* Bàn chơi — mức Khó cuộn ngang */}
+      {/* Bàn chơi - mức Khó cuộn ngang */}
       <div className="rounded-[8px] border border-line bg-slate p-3">
         <div className="overflow-x-auto">
           <div
@@ -483,7 +483,7 @@ export default function DoMinPage() {
                   </span>
                   {newRecord && (
                     <span className="ml-2 font-medium text-brass">
-                      — Kỷ lục mới!
+                      - Kỷ lục mới!
                     </span>
                   )}
                 </span>
@@ -512,7 +512,7 @@ export default function DoMinPage() {
           Cách chơi
         </h2>
         <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
-          <li>• Nhấn vào ô để mở — cú nhấn đầu tiên luôn an toàn.</li>
+          <li>• Nhấn vào ô để mở - cú nhấn đầu tiên luôn an toàn.</li>
           <li>
             • Số trên ô cho biết có bao nhiêu quả mìn nằm trong 8 ô xung quanh.
           </li>

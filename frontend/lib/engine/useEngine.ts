@@ -89,7 +89,7 @@ export function useEngine(
     pendingRef.current = null;
     if (!pending) return;
     if (pending.timer) {
-      // kết quả đã về, chỉ còn chờ min-think — hủy timer là đủ
+      // kết quả đã về, chỉ còn chờ min-think - hủy timer là đủ
       clearTimeout(pending.timer);
       return;
     }

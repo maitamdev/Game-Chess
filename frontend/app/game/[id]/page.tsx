@@ -21,11 +21,12 @@ import CaroPlayerCard from "@/components/caro/CaroPlayerCard";
 import { Caro, type CaroColor, type CaroMove } from "@/lib/caro/rules";
 import { caroResultTitle, CARO_TERMINATION_LABELS } from "@/lib/caro/labels";
 import JungleBoard from "@/components/jungle/JungleBoard";
+import JungleGameFrame from "@/components/jungle/JungleGameFrame";
 import JunglePlayerCard from "@/components/jungle/JunglePlayerCard";
 import { Jungle, type JgColor, type JgMove } from "@/lib/jungle/rules";
 import { trackJgPieces } from "@/lib/jungle/tracker";
 import {
-  jgCapturedEmoji,
+  jgCapturedRanks,
   jgResultTitle,
   JG_TERMINATION_LABELS,
 } from "@/lib/jungle/labels";
@@ -33,12 +34,18 @@ import OanquanBoard from "@/components/oanquan/OanquanBoard";
 import OanquanPlayerCard from "@/components/oanquan/OanquanPlayerCard";
 import { OAnQuan, type OqColor, type OqMove } from "@/lib/oanquan/rules";
 import { oqBoardAt } from "@/lib/oanquan/tracker";
+import Providers from "@/app/providers";
 import {
   oqResultTitle,
   oqSideName,
   OQ_TERMINATION_LABELS,
 } from "@/lib/oanquan/labels";
 import { TERMINATION_LABELS, resultTitle, type Termination } from "@/lib/types";
+import {
+  DownloadSimple,
+  FastForward,
+  Rewind,
+} from "@phosphor-icons/react";
 
 /** Đồ thị lợi thế: phân tích nhanh phía client bằng engine tương ứng. */
 function useEvalSeries(fens: string[] | null, variant: "chess" | "xiangqi") {
@@ -166,7 +173,7 @@ function ReviewHeader({
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-lg font-medium">
-          {game.white.username} — {game.black.username}
+          {game.white.username} - {game.black.username}
           <span className="ml-2 text-sm text-muted">
             {game.variant === "xiangqi"
             ? "· Cờ tướng"
@@ -238,11 +245,9 @@ function ChessReview({ game }: { game: GameDetail }) {
   const boardWidth = { width: "min(72vh, 560px)", maxWidth: "calc(100vw - 32px)" };
   const card = (color: Color) => {
     const player = color === "w" ? game.white : game.black;
-    const eloBefore = color === "w" ? game.white_elo_before : game.black_elo_before;
     return (
       <PlayerCard
         name={player.username}
-        subtitle={eloBefore ? `Elo ${eloBefore}` : undefined}
         color={color}
         clockMs={null}
         clockActive={false}
@@ -340,11 +345,9 @@ function XiangqiReview({ game }: { game: GameDetail }) {
   const boardWidth = { width: "min(66vh, 560px)", maxWidth: "calc(100vw - 32px)" };
   const card = (color: XqColor) => {
     const player = color === "r" ? game.white : game.black;
-    const eloBefore = color === "r" ? game.white_elo_before : game.black_elo_before;
     return (
       <XqPlayerCard
         name={player.username}
-        subtitle={eloBefore ? `Elo ${eloBefore}` : undefined}
         color={color}
         clockMs={null}
         clockActive={false}
@@ -426,11 +429,9 @@ function CaroReview({ game }: { game: GameDetail }) {
 
   const card = (color: CaroColor) => {
     const player = color === "x" ? game.white : game.black;
-    const eloBefore = color === "x" ? game.white_elo_before : game.black_elo_before;
     return (
       <CaroPlayerCard
         name={player.username}
-        subtitle={eloBefore ? `Elo ${eloBefore}` : undefined}
         color={color}
         clockMs={null}
         clockActive={false}
@@ -467,7 +468,15 @@ function CaroReview({ game }: { game: GameDetail }) {
   );
 }
 
-function JungleReview({ game }: { game: GameDetail }) {
+function JungleReview({
+  game,
+  titleText,
+  subtitleText,
+}: {
+  game: GameDetail;
+  titleText: string;
+  subtitleText: string;
+}) {
   const [viewIndex, setViewIndex] = useState(0);
   const initializedRef = useRef(false);
 
@@ -499,18 +508,18 @@ function JungleReview({ game }: { game: GameDetail }) {
     viewIndex > 0
       ? { from: verboseMoves[viewIndex - 1].from, to: verboseMoves[viewIndex - 1].to }
       : null;
+  const replayTurn: JgColor = viewIndex % 2 === 0 ? "r" : "b";
 
   const card = (color: JgColor) => {
     const player = color === "r" ? game.white : game.black;
-    const eloBefore = color === "r" ? game.white_elo_before : game.black_elo_before;
     return (
       <JunglePlayerCard
         name={player.username}
-        subtitle={eloBefore ? `Elo ${eloBefore}` : undefined}
         color={color}
         clockMs={null}
         clockActive={false}
-        capturedEmoji={jgCapturedEmoji(
+        isTurn={replayTurn === color}
+        capturedRanks={jgCapturedRanks(
           verboseMoves,
           viewIndex,
           color === "r" ? "b" : "r",
@@ -519,18 +528,13 @@ function JungleReview({ game }: { game: GameDetail }) {
     );
   };
 
-  const cardWidth = {
-    width: "calc(min(72vh, 600px) * 7 / 9)",
-    maxWidth: "calc(100vw - 32px)",
-  };
-
   return (
-    <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
-      <div className="flex flex-col gap-3">
-        <div style={cardWidth}>{card("b")}</div>
+    <JungleGameFrame
+      topPlayer={card("b")}
+      board={
         <JungleBoard
           pieces={pieces}
-          turn={viewIndex % 2 === 0 ? "r" : "b"}
+          turn={replayTurn}
           orientation="red"
           interactive={false}
           movableColor={null}
@@ -538,13 +542,69 @@ function JungleReview({ game }: { game: GameDetail }) {
           onMove={() => {}}
           lastMove={lastMove}
         />
-        <div style={cardWidth}>{card("r")}</div>
-      </div>
-      <aside className="flex w-full max-w-sm flex-col gap-3 lg:w-72 lg:self-start">
-        <MoveList moves={verboseMoves} viewIndex={viewIndex} onSelect={setViewIndex} />
-        <p className="text-xs text-muted">Dùng phím ← → để tua từng nước.</p>
-      </aside>
-    </div>
+      }
+      bottomPlayer={card("r")}
+      actions={
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className="jg-action-button"
+            onClick={() => setViewIndex(0)}
+            disabled={viewIndex === 0}
+          >
+            <Rewind aria-hidden size={18} weight="duotone" />
+            <span>Về đầu</span>
+          </button>
+          <button
+            type="button"
+            className="jg-action-button"
+            onClick={() => setViewIndex(verboseMoves.length)}
+            disabled={viewIndex === verboseMoves.length}
+          >
+            <FastForward aria-hidden size={18} weight="duotone" />
+            <span>Về cuối</span>
+          </button>
+        </div>
+      }
+      moveList={
+        <MoveList
+          moves={verboseMoves}
+          viewIndex={viewIndex}
+          onSelect={setViewIndex}
+          variant="jungle"
+        />
+      }
+      statusLabel={
+        verboseMoves.length === 0
+          ? "Thế cờ ban đầu"
+          : `Nước ${viewIndex}/${verboseMoves.length}`
+      }
+      statusColor={replayTurn}
+      notices={
+        <div className="jg-review-header mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <h1 className="truncate font-[family-name:var(--font-display)] text-base font-semibold text-[#F0EBDD] sm:text-lg">
+              {game.white.username} - {game.black.username}
+            </h1>
+            <p className="mt-1 text-xs text-[#929D96] sm:text-sm">
+              {titleText}
+              <span className="mx-2 text-[#59645E]">|</span>
+              {subtitleText}
+              <span className="mx-2 text-[#59645E]">|</span>
+              {game.time_control}
+            </p>
+          </div>
+          <a
+            href={`${API_URL}/api/games/${game.id}/pgn`}
+            download
+            className="jg-review-download"
+          >
+            <DownloadSimple aria-hidden size={18} weight="duotone" />
+            <span>Tải biên bản</span>
+          </a>
+        </div>
+      }
+    />
   );
 }
 
@@ -586,13 +646,10 @@ function OanquanReview({ game }: { game: GameDetail }) {
 
   const card = (color: OqColor) => {
     const player = color === "a" ? game.white : game.black;
-    const eloBefore = color === "a" ? game.white_elo_before : game.black_elo_before;
     return (
       <OanquanPlayerCard
         name={player.username}
-        subtitle={
-          eloBefore ? `${oqSideName(color)} · Elo ${eloBefore}` : oqSideName(color)
-        }
+        subtitle={oqSideName(color)}
         color={color}
         clockMs={null}
         clockActive={false}
@@ -626,7 +683,7 @@ function OanquanReview({ game }: { game: GameDetail }) {
   );
 }
 
-export default function GameReviewPage() {
+function GameReviewPageContent() {
   const params = useParams<{ id: string }>();
   const { data: game, isLoading } = useQuery({
     queryKey: ["game", params.id],
@@ -693,13 +750,21 @@ export default function GameReviewPage() {
               ""
             : TERMINATION_LABELS[(game.termination ?? "agreement") as Termination];
 
+  if (isJungle) {
+    return (
+      <JungleReview
+        game={game}
+        titleText={titleText}
+        subtitleText={subtitleText}
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       <ReviewHeader game={game} titleText={titleText} subtitleText={subtitleText} />
       {isOanquan ? (
         <OanquanReview game={game} />
-      ) : isJungle ? (
-        <JungleReview game={game} />
       ) : isCaro ? (
         <CaroReview game={game} />
       ) : isXq ? (
@@ -707,20 +772,14 @@ export default function GameReviewPage() {
       ) : (
         <ChessReview game={game} />
       )}
-      <div className="mt-6 flex gap-4">
-        <Link
-          href={`/u/${game.white.username}`}
-          className="text-sm text-muted hover:text-brass"
-        >
-          Hồ sơ {game.white.username} →
-        </Link>
-        <Link
-          href={`/u/${game.black.username}`}
-          className="text-sm text-muted hover:text-brass"
-        >
-          Hồ sơ {game.black.username} →
-        </Link>
-      </div>
     </div>
+  );
+}
+
+export default function GameReviewPage() {
+  return (
+    <Providers>
+      <GameReviewPageContent />
+    </Providers>
   );
 }

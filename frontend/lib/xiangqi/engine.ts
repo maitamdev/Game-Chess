@@ -1,6 +1,6 @@
 /**
  * Engine cờ tướng: minimax + cắt tỉa alpha-beta + quiescence,
- * đào sâu dần kèm giới hạn thời gian — cùng kiến trúc engine cờ vua.
+ * đào sâu dần kèm giới hạn thời gian - cùng kiến trúc engine cờ vua.
  * Điểm centipawn, dương = Đỏ lợi.
  */
 
@@ -27,7 +27,7 @@ export function evaluateXq(game: Xiangqi): number {
     const rank = Math.floor(i / 9);
     const file = i % 9;
     let v = XQ_VALUES[p.type];
-    const advance = p.color === "r" ? rank : 9 - rank; // mức tiến quân 0–9
+    const advance = p.color === "r" ? rank : 9 - rank; // mức tiến quân 0-9
     switch (p.type) {
       case "s": {
         const crossed = p.color === "r" ? rank >= 5 : rank <= 4;
@@ -70,7 +70,7 @@ export interface XqSearchParams {
   maxDepth?: number;
   timeLimitMs?: number;
   fullWindowRoot?: boolean;
-  /** key các thế cờ đã qua trong ván — engine tránh/tận dụng hoà lặp thế */
+  /** key các thế cờ đã qua trong ván - engine tránh/tận dụng hoà lặp thế */
   historyKeys?: string[];
   onIteration?: (depth: number, scoreForMover: number, bestUci: string) => void;
 }

@@ -9,7 +9,7 @@ type InMessage =
   | { type: "search"; fen: string; level: XqEngineLevel; history?: string[] }
   | { type: "stop" };
 
-/** Năm mức độ — cùng cấu trúc engine cờ vua (mục 6). */
+/** Năm mức độ - cùng cấu trúc engine cờ vua (mục 6). */
 const LEVEL_PARAMS: Record<XqEngineLevel, XqSearchParams> = {
   1: { maxDepth: 1, fullWindowRoot: true },
   2: { maxDepth: 2, fullWindowRoot: true },
@@ -51,5 +51,5 @@ self.onmessage = (e: MessageEvent<InMessage>) => {
   });
 };
 
-// giữ import evaluateXq cho tương lai (tra cứu tĩnh) — tránh cảnh báo unused
+// giữ import evaluateXq cho tương lai (tra cứu tĩnh) - tránh cảnh báo unused
 void evaluateXq;

@@ -10,15 +10,15 @@ export function playXqMoveSound(captured: boolean, check: boolean, gameEnd: bool
 
 export const XQ_TERMINATION_LABELS: Record<string, string> = {
   checkmate: "Chiếu bí",
-  stalemate: "Hết nước đi — thua cuộc (luật cờ tướng)",
+  stalemate: "Hết nước đi - thua cuộc (luật cờ tướng)",
   repetition: "Hoà do lặp thế 3 lần",
-  perpetual_check: "Chiếu dai — bên chiếu liên tục bị xử thua",
+  perpetual_check: "Chiếu dai - bên chiếu liên tục bị xử thua",
   fifty_move: "Hoà theo luật 60 nước không ăn quân",
-  insufficient: "Hoà — hai bên hết quân tấn công",
+  insufficient: "Hoà - hai bên hết quân tấn công",
   timeout: "Hết giờ",
   resignation: "Đầu hàng",
   agreement: "Hoà theo thoả thuận",
-  aborted: "Không có nước đi nào — không tính Elo",
+  aborted: "Ván chưa bắt đầu",
 };
 
 export function xqResultTitle(winner: XqColor | null, termination: string): string {

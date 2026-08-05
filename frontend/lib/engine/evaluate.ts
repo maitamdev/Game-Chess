@@ -26,7 +26,7 @@ export function evaluate(chess: Chess): number {
   let blackNonPawnMaterial = 0;
   let whiteKing: { f: number; r: number } | null = null;
   let blackKing: { f: number; r: number } | null = null;
-  // pawnRanks[color][file] = danh sách hàng (0–7, hàng 1 = 0) có tốt
+  // pawnRanks[color][file] = danh sách hàng (0-7, hàng 1 = 0) có tốt
   const pawnFiles: Record<Color, number[][]> = {
     w: Array.from({ length: 8 }, () => []),
     b: Array.from({ length: 8 }, () => []),

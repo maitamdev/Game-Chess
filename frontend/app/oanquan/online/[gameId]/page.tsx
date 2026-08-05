@@ -17,14 +17,11 @@ import {
   OQ_TERMINATION_LABELS,
   playOqMoveSound,
 } from "@/lib/oanquan/labels";
-import { useAuthStore } from "@/stores/authStore";
 
 export default function OanquanOnlineGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = params.gameId;
   const router = useRouter();
-  const hydrated = useAuthStore((s) => s.hydrated);
-  const accessToken = useAuthStore((s) => s.accessToken);
 
   const {
     state,
@@ -48,10 +45,6 @@ export default function OanquanOnlineGamePage() {
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const [modalDismissed, setModalDismissed] = useState(false);
   const [confirmResign, setConfirmResign] = useState(false);
-
-  useEffect(() => {
-    if (hydrated && !accessToken) router.replace("/login?next=/oanquan/online");
-  }, [hydrated, accessToken, router]);
 
   // server "white" = bên A (Đỏ, đi trước), "black" = bên B (Xanh)
   const myColor: OqColor | null =
@@ -81,7 +74,7 @@ export default function OanquanOnlineGamePage() {
   const handleMove = useCallback(
     (uci: string) => {
       if (pending) return;
-      // thử trên bản dựng từ nước đã xác nhận — server vẫn là trọng tài
+      // thử trên bản dựng từ nước đã xác nhận - server vẫn là trọng tài
       const game = new OAnQuan();
       for (const u of confirmedUcis ?? []) {
         if (!game.move(u)) return;
@@ -120,7 +113,6 @@ export default function OanquanOnlineGamePage() {
     return (
       <OanquanPlayerCard
         name={player?.username ?? "…"}
-        subtitle={player ? `Elo ${player.elo}` : undefined}
         color={color}
         clockMs={
           state ? (color === "a" ? displayTimes.white : displayTimes.black) : null
@@ -147,12 +139,12 @@ export default function OanquanOnlineGamePage() {
         <div className="mb-4 flex flex-col gap-2">
           {connectionLost && (
             <p className="rounded-[6px] border border-rust bg-rust/10 px-4 py-2 text-sm text-rust">
-              Mất kết nối — đang thử kết nối lại…
+              Mất kết nối - đang thử kết nối lại…
             </p>
           )}
           {oppSecondsLeft !== null && (
             <p className="rounded-[6px] border border-brass bg-brass/10 px-4 py-2 text-sm text-brass">
-              Đối thủ mất kết nối — xử thua sau {oppSecondsLeft} giây nếu không
+              Đối thủ mất kết nối - xử thua sau {oppSecondsLeft} giây nếu không
               quay lại.
             </p>
           )}
@@ -233,7 +225,7 @@ export default function OanquanOnlineGamePage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.raw === "white" || result.raw === "black" ? "🌾" : "½–½"}
+              {result.raw === "white" || result.raw === "black" ? "🌾" : "½-½"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {oqResultTitle(
@@ -246,30 +238,13 @@ export default function OanquanOnlineGamePage() {
             </p>
             {result.scoreA !== null && result.scoreB !== null && (
               <p className="mt-2 font-[family-name:var(--font-mono)] text-sm text-parchment/90">
-                {oqSideName("a")} {result.scoreA} — {result.scoreB}{" "}
+                {oqSideName("a")} {result.scoreA} - {result.scoreB}{" "}
                 {oqSideName("b")}
-              </p>
-            )}
-            {myColor && result.raw !== "aborted" && (
-              <p className="mt-3 text-sm">
-                Elo ô ăn quan:{" "}
-                <span
-                  className={`font-[family-name:var(--font-mono)] ${
-                    result.eloChange >= 0 ? "text-sage" : "text-rust"
-                  }`}
-                >
-                  {result.eloChange >= 0 ? "+" : ""}
-                  {result.eloChange}
-                </span>{" "}
-                →{" "}
-                <span className="font-[family-name:var(--font-mono)]">
-                  {result.newElo}
-                </span>
               </p>
             )}
             <div className="mt-6 flex justify-center gap-2">
               <Button variant="primary" onClick={() => router.push("/oanquan/online")}>
-                Tìm trận mới
+                Về sảnh
               </Button>
               {result.raw !== "aborted" && (
                 <Button onClick={() => router.push(`/game/${gameId}`)}>

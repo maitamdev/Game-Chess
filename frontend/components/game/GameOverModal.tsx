@@ -23,7 +23,7 @@ export default function GameOverModal({
     <Modal open={open} onClose={onClose}>
       <div className="text-center">
         <span aria-hidden className="text-2xl leading-none">
-          {result.winner === null ? "½–½" : result.winner === "white" ? "1–0" : "0–1"}
+          {result.winner === null ? "½-½" : result.winner === "white" ? "1-0" : "0-1"}
         </span>
         <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
           {resultTitle(result)}

@@ -15,7 +15,7 @@ type OutMessage =
   | { type: "bestmove"; move: string; evaluation: number; depth: number }
   | { type: "progress"; depth: number; evaluation: number };
 
-/** Năm mức độ — mục 6 */
+/** Năm mức độ - mục 6 */
 const LEVEL_PARAMS: Record<EngineLevel, SearchParams> = {
   1: { maxDepth: 1, fullWindowRoot: true },
   2: { maxDepth: 2, fullWindowRoot: true },

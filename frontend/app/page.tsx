@@ -1,15 +1,13 @@
+import Image from "next/image";
 import Link from "next/link";
-import MiniLeaderboard from "@/components/ui/MiniLeaderboard";
 
 const games = [
   {
     href: "/chess",
-    guide: "/chess/guide",
     title: "Cờ Vua",
     glyph: "♞",
-    serif: false,
     description:
-      "Bàn cờ gỗ hoàng dương và óc chó. Engine 5 mức, đấu xếp hạng Elo, premove và đồng hồ chuẩn thi đấu.",
+      "Bàn cờ kinh điển, engine 5 mức, phòng đấu bằng mã và đồng hồ chuẩn thi đấu.",
     modes: [
       { href: "/play/online", label: "Đấu online" },
       { href: "/play/computer", label: "Đấu với máy" },
@@ -18,12 +16,10 @@ const games = [
   },
   {
     href: "/xiangqi",
-    guide: "/xiangqi/guide",
     title: "Cờ Tướng",
     glyph: "將",
-    serif: true,
     description:
-      "Xe pháo mã qua sông — đủ luật cản mã, mắt tượng, lộ mặt tướng. Elo cờ tướng riêng, engine 5 mức.",
+      "Đủ luật cản mã, mắt tượng và lộ mặt tướng. Có phòng riêng cùng engine 5 mức.",
     modes: [
       { href: "/xiangqi/online", label: "Đấu online" },
       { href: "/xiangqi/computer", label: "Đấu với máy" },
@@ -32,12 +28,10 @@ const games = [
   },
   {
     href: "/caro",
-    guide: "/caro/guide",
     title: "Cờ Caro",
-    glyph: "✕",
-    serif: false,
+    glyph: "×",
     description:
-      "Bàn 200×200 mênh mông như caro giấy — nối đủ 5 quân là thắng. Kéo di chuyển, phóng to thu nhỏ, AI 5 mức.",
+      "Bàn 200×200 rộng rãi, kéo và phóng to mượt mà. Nối đủ 5 quân để chiến thắng.",
     modes: [
       { href: "/caro/online", label: "Đấu online" },
       { href: "/caro/computer", label: "Đấu với máy" },
@@ -46,12 +40,10 @@ const games = [
   },
   {
     href: "/jungle",
-    guide: "/jungle/guide",
     title: "Cờ Thú",
-    glyph: "🦁",
-    serif: false,
+    glyph: "虎",
     description:
-      "Voi sợ Chuột, Sư tử nhảy sông, bẫy quanh hang — đưa một con thú vào hang đối phương là thắng.",
+      "Tám cấp bậc, sông, bẫy và hang. Đưa quân vào hang đối phương để thắng.",
     modes: [
       { href: "/jungle/online", label: "Đấu online" },
       { href: "/jungle/computer", label: "Đấu với máy" },
@@ -60,12 +52,10 @@ const games = [
   },
   {
     href: "/oanquan",
-    guide: "/oanquan/guide",
     title: "Ô Ăn Quan",
-    glyph: "🌾",
-    serif: false,
+    glyph: "田",
     description:
-      "Rải sỏi quanh 10 ô dân và 2 ô quan — ăn cách ô, vay nợ rải lại, hết quan tàn dân đếm điểm.",
+      "Rải sỏi quanh 10 ô dân và 2 ô quan. Tính từng nước, gom thật nhiều điểm.",
     modes: [
       { href: "/oanquan/online", label: "Đấu online" },
       { href: "/oanquan/computer", label: "Đấu với máy" },
@@ -76,148 +66,178 @@ const games = [
 
 const minigames = [
   {
+    href: "/cards",
+    title: "Bàn Bài",
+    mark: "A",
+    description: "UNO online, Xì Dách và Bài Cào.",
+  },
+  {
+    href: "/minigames/uno",
+    title: "UNO Arena",
+    mark: "U",
+    description: "Đấu tốc độ cùng 3 đối thủ máy.",
+  },
+  {
     href: "/minigames/2048",
     title: "2048",
-    glyph: "🎯",
-    description: "Trượt và hợp nhất — chạm mốc 2048.",
+    mark: "20",
+    description: "Trượt ô, hợp số, chinh phục 2048.",
   },
   {
     href: "/minigames/domin",
     title: "Dò Mìn",
-    glyph: "💣",
-    description: "Mở bàn, cắm cờ, đừng nổ.",
+    mark: "M",
+    description: "Quét sạch ô mìn, tránh bẫy nổ.",
   },
   {
     href: "/minigames/latthe",
     title: "Lật Thẻ",
-    glyph: "🎴",
-    description: "Tìm cặp giống nhau, ít lượt nhất.",
+    mark: "L",
+    description: "Tìm cặp thẻ bằng trí nhớ.",
   },
 ];
 
 export default function HomePage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-12 max-w-2xl">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold leading-tight">
-          Phòng đấu đã lên đèn.
-        </h1>
-        <p className="mt-3 text-base text-muted">
-          Năm bàn cờ — cờ vua, cờ tướng, caro, cờ thú, ô ăn quan — và một góc
-          giải trí cho lúc chờ trận. Một đồng hồ đang chờ được bấm.
-        </p>
-        <Link
-          href="/guide"
-          className="mt-4 inline-block rounded-[6px] text-sm text-brass transition-[filter] hover:brightness-110"
-        >
-          Mới chơi? Xem hướng dẫn từng game →
-        </Link>
-      </div>
+    <div className="home-page min-h-[100dvh] overflow-hidden bg-ink text-parchment">
+      <section className="relative isolate min-h-[620px] border-b border-[color:var(--home-line)] lg:min-h-[calc(100dvh-64px)]">
+        <Image
+          src="/images/ky-dai-hero.webp"
+          alt="Bàn cờ gỗ trong kỳ quán Việt về đêm"
+          fill
+          priority
+          sizes="100vw"
+          className="hero-image object-cover object-[62%_center]"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#07131b_0%,rgba(7,19,27,.97)_28%,rgba(7,19,27,.58)_55%,rgba(7,19,27,.08)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(0deg,#07131b_0%,transparent_30%)]" />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {games.map((game) => (
-          <div
-            key={game.href}
-            className="group flex flex-col rounded-[10px] border border-line bg-slate p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass hover:shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
-          >
-            <div className="flex items-center gap-3">
-              <span
-                aria-hidden
-                className="text-2xl leading-none text-brass"
-                style={
-                  game.serif
-                    ? { fontFamily: '"Noto Serif SC", "SimSun", serif' }
-                    : undefined
-                }
-              >
-                {game.glyph}
-              </span>
-              <Link href={game.href} className="rounded-[6px]">
-                <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold transition-colors group-hover:text-brass">
-                  {game.title}
-                </h2>
-              </Link>
-            </div>
-            <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
-              {game.description}
+        <div className="relative mx-auto flex min-h-[620px] max-w-[1440px] items-center px-5 py-16 sm:px-8 lg:min-h-[calc(100dvh-64px)] lg:px-14">
+          <div className="hero-copy max-w-[650px]">
+            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--lacquer)]">
+              Năm bàn cờ. Một kỳ đài.
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              {game.modes.map((mode, i) => (
-                <Link
-                  key={mode.href}
-                  href={mode.href}
-                  className={
-                    i === 0
-                      ? "rounded-[6px] bg-brass px-4 py-2 text-sm font-medium text-ink transition-[filter] hover:brightness-110"
-                      : "rounded-[6px] border border-line px-4 py-2 text-sm text-parchment transition-colors hover:border-brass hover:text-brass"
-                  }
-                >
-                  {mode.label}
-                </Link>
-              ))}
+            <h1 className="max-w-[620px] font-[family-name:var(--font-display)] text-[clamp(3.5rem,7vw,7.2rem)] font-semibold leading-[0.88] tracking-[-0.055em] text-[color:var(--ivory)]">
+              Đấu Trường
+              <span className="block text-[color:var(--sand)]">Kỳ Đài</span>
+            </h1>
+            <p className="mt-7 max-w-[520px] text-base leading-7 text-[color:var(--home-muted)] sm:text-lg">
+              Từ cờ vua đến ô ăn quan. Chọn bàn, tìm đối thủ và bắt đầu ván đấu của bạn.
+            </p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
-                href={game.guide}
-                className="rounded-[6px] px-1 py-2 text-sm text-muted transition-colors hover:text-brass"
+                href="/rooms"
+                className="home-primary inline-flex min-h-12 items-center justify-center gap-3 rounded-[4px] bg-[color:var(--lacquer)] px-7 py-3 font-semibold text-[color:var(--ivory)] transition duration-300 hover:bg-[color:var(--lacquer-light)] active:translate-y-px"
               >
-                Luật chơi →
+                Vào phòng chơi
+                <span aria-hidden>↗</span>
+              </Link>
+              <Link
+                href="/guide"
+                className="inline-flex min-h-12 items-center justify-center rounded-[4px] border border-[color:var(--home-line-strong)] bg-[rgba(7,19,27,.5)] px-7 py-3 font-semibold text-[color:var(--ivory)] transition duration-300 hover:border-[color:var(--sand)] hover:bg-[rgba(19,31,38,.86)] active:translate-y-px"
+              >
+                Xem luật chơi
               </Link>
             </div>
-          </div>
-        ))}
-
-        {/* thẻ giới thiệu góc giải trí — lấp ô thứ 6 của lưới 3 cột */}
-        <div className="flex flex-col rounded-[10px] border border-dashed border-line bg-transparent p-6">
-          <div className="flex items-center gap-3">
-            <span aria-hidden className="text-2xl leading-none">
-              🕹️
-            </span>
-            <Link href="/minigames" className="rounded-[6px]">
-              <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold transition-colors hover:text-brass">
-                Góc Giải Trí
-              </h2>
-            </Link>
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-muted">
-            Không cần đối thủ, không cần đăng nhập — vài phút xả hơi giữa hai
-            ván cờ.
-          </p>
-          <div className="mt-4 flex flex-1 flex-col gap-2">
-            {minigames.map((mg) => (
-              <Link
-                key={mg.href}
-                href={mg.href}
-                className="group/mg flex items-center gap-3 rounded-[8px] border border-line px-4 py-2.5 transition-colors hover:border-brass"
-              >
-                <span aria-hidden className="text-lg leading-none">
-                  {mg.glyph}
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-medium text-parchment transition-colors group-hover/mg:text-brass">
-                    {mg.title}
-                  </span>
-                  <span className="block text-xs text-muted">
-                    {mg.description}
-                  </span>
-                </span>
-                <span aria-hidden className="text-muted transition-colors group-hover/mg:text-brass">
-                  →
-                </span>
-              </Link>
-            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      <h2 className="mt-14 font-[family-name:var(--font-display)] text-xl font-semibold">
-        Bảng xếp hạng
-      </h2>
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <MiniLeaderboard variant="chess" title="Xếp hạng cờ vua" />
-        <MiniLeaderboard variant="xiangqi" title="Xếp hạng cờ tướng" />
-        <MiniLeaderboard variant="caro" title="Xếp hạng caro" />
-        <MiniLeaderboard variant="jungle" title="Xếp hạng cờ thú" />
-        <MiniLeaderboard variant="oanquan" title="Xếp hạng ô ăn quan" />
-      </div>
+      <section className="relative mx-auto max-w-[1440px] px-5 py-16 sm:px-8 lg:px-14 lg:py-24">
+        <div className="mb-9 max-w-2xl">
+          <h2 className="font-[family-name:var(--font-display)] text-4xl font-semibold tracking-[-0.03em] text-[color:var(--ivory)] sm:text-5xl">
+            Chọn môn thi đấu
+          </h2>
+          <p className="mt-3 max-w-xl leading-7 text-[color:var(--home-muted)]">
+            Mỗi bàn cờ có một nhịp riêng. Tạo phòng với bạn bè hoặc luyện với máy ngay.
+          </p>
+        </div>
+
+        <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_350px]">
+          <div className="game-list border-t border-[color:var(--home-line-strong)]">
+            {games.map((game, index) => (
+              <article
+                key={game.href}
+                className="game-row group relative grid gap-5 border-b border-[color:var(--home-line)] py-7 transition-colors duration-300 hover:bg-[color:var(--home-surface)] md:grid-cols-[64px_minmax(210px,.75fr)_minmax(270px,1.15fr)] md:items-center md:px-5"
+                style={{ animationDelay: `${index * 70}ms` }}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-[4px] border border-[color:var(--home-line-strong)] bg-[color:var(--home-raised)] font-[family-name:var(--font-display)] text-2xl text-[color:var(--sand)] transition-colors group-hover:border-[color:var(--lacquer)]">
+                  {game.glyph}
+                </div>
+
+                <div>
+                  <Link href={game.href} className="before:absolute before:inset-0">
+                    <h3 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-[-0.025em] text-[color:var(--ivory)] transition-colors group-hover:text-[color:var(--sand)]">
+                      {game.title}
+                    </h3>
+                  </Link>
+                  <p className="mt-2 max-w-[42ch] text-sm leading-6 text-[color:var(--home-muted)]">
+                    {game.description}
+                  </p>
+                </div>
+
+                <div className="relative z-[1] flex flex-wrap gap-x-5 gap-y-2 md:justify-end">
+                  {game.modes.map((mode, modeIndex) => (
+                    <Link
+                      key={mode.href}
+                      href={mode.href}
+                      className={`border-b py-1 text-sm font-medium transition-colors ${
+                        modeIndex === 0
+                          ? "border-[color:var(--lacquer)] text-[color:var(--sand)] hover:text-[color:var(--ivory)]"
+                          : "border-transparent text-[color:var(--home-muted)] hover:border-[color:var(--home-line-strong)] hover:text-[color:var(--ivory)]"
+                      }`}
+                    >
+                      {mode.label}
+                    </Link>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <aside className="minigames-panel overflow-hidden rounded-[4px] border border-[color:var(--home-line-strong)] bg-[color:var(--home-raised)] p-5 lg:p-6 xl:sticky xl:top-24">
+            <div className="flex items-end justify-between border-b border-[color:var(--home-line)] pb-5">
+              <div>
+                <h2 className="font-[family-name:var(--font-display)] text-3xl font-semibold text-[color:var(--ivory)]">
+                  Góc giải trí
+                </h2>
+                <p className="mt-1 text-sm text-[color:var(--home-muted)]">
+                  Đổi nhịp giữa các ván cờ.
+                </p>
+              </div>
+              <span className="font-[family-name:var(--font-display)] text-3xl text-[color:var(--lacquer)]" aria-hidden>
+                棋
+              </span>
+            </div>
+
+            <div className="mt-3">
+              {minigames.map((game) => (
+                <Link
+                  key={game.href}
+                  href={game.href}
+                  className="group flex items-center gap-4 border-b border-[color:var(--home-line)] py-5 transition-transform duration-300 hover:translate-x-1"
+                >
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[4px] border border-[color:var(--home-line-strong)] bg-[color:var(--home-surface)] font-[family-name:var(--font-mono)] text-sm font-semibold text-[color:var(--sand)]">
+                    {game.mark}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-[color:var(--ivory)]">
+                      {game.title}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-[color:var(--home-muted)]">
+                      {game.description}
+                    </span>
+                  </span>
+                  <span className="text-[color:var(--lacquer)] transition-transform group-hover:translate-x-1" aria-hidden>
+                    →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </section>
+
     </div>
   );
 }

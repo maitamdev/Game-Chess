@@ -1,8 +1,8 @@
 /**
- * Trọng tài phía server cho 5 game — port interface duck-typed của
+ * Trọng tài phía server cho 5 game - port interface duck-typed của
  * backend Python (try_move / detect_end / has_mating_material / build_pgn),
  * nhưng tái sử dụng CHÍNH các bộ luật TS đã có ở client (lib/xiangqi,
- * lib/caro, lib/jungle, lib/oanquan — thuần logic, không phụ thuộc DOM)
+ * lib/caro, lib/jungle, lib/oanquan - thuần logic, không phụ thuộc DOM)
  * và chess.js cho cờ vua. Chuỗi result/termination giữ nguyên như cũ.
  */
 
@@ -40,7 +40,7 @@ export interface ServerRules {
   tryMove(uci: string): AppliedMove | null;
   /** Phát hiện kết thúc tự nhiên sau nước vừa đi. */
   detectEnd(): GameEndInfo | null;
-  /** Bên `color` còn đủ lực thắng không — đối thủ hết giờ mà thiếu lực → hoà. */
+  /** Bên `color` còn đủ lực thắng không - đối thủ hết giờ mà thiếu lực → hoà. */
   hasMatingMaterial(color: Color): boolean;
   buildPgn(
     whiteName: string,
@@ -174,7 +174,7 @@ class ChessRules implements ServerRules {
     startedAtMs: number,
   ): string {
     const g = new Chess();
-    g.setHeader("Event", "Kỳ Đài — ván xếp hạng");
+    g.setHeader("Event", "Kỳ Đài - phòng bạn bè");
     g.setHeader("Site", "Kỳ Đài");
     g.setHeader("Date", pgnDate(startedAtMs));
     g.setHeader("White", whiteName);
@@ -249,7 +249,7 @@ class XiangqiRules implements ServerRules {
   ): string {
     return variantPgn(
       [
-        ["Event", "Kỳ Đài — ván cờ tướng xếp hạng"],
+        ["Event", "Kỳ Đài - phòng cờ tướng"],
         ["Site", "Kỳ Đài"],
         ["Date", pgnDate(startedAtMs)],
         ["Red", whiteName],
@@ -309,7 +309,7 @@ class CaroRules implements ServerRules {
   }
 
   hasMatingMaterial(): boolean {
-    return true; // caro không có khái niệm thiếu lực — hết giờ luôn thua
+    return true; // caro không có khái niệm thiếu lực - hết giờ luôn thua
   }
 
   buildPgn(
@@ -321,7 +321,7 @@ class CaroRules implements ServerRules {
   ): string {
     return variantPgn(
       [
-        ["Event", "Kỳ Đài — ván caro xếp hạng"],
+        ["Event", "Kỳ Đài - phòng caro"],
         ["Site", "Kỳ Đài"],
         ["Date", pgnDate(startedAtMs)],
         ["X", whiteName],
@@ -399,7 +399,7 @@ class JungleRules implements ServerRules {
   ): string {
     return variantPgn(
       [
-        ["Event", "Kỳ Đài — ván cờ thú xếp hạng"],
+        ["Event", "Kỳ Đài - phòng cờ thú"],
         ["Site", "Kỳ Đài"],
         ["Date", pgnDate(startedAtMs)],
         ["Red", whiteName],
@@ -466,7 +466,7 @@ class OanquanRules implements ServerRules {
   }
 
   hasMatingMaterial(): boolean {
-    return true; // ô ăn quan không có khái niệm thiếu lực — hết giờ luôn thua
+    return true; // ô ăn quan không có khái niệm thiếu lực - hết giờ luôn thua
   }
 
   buildPgn(
@@ -478,7 +478,7 @@ class OanquanRules implements ServerRules {
   ): string {
     return variantPgn(
       [
-        ["Event", "Kỳ Đài — ván ô ăn quan xếp hạng"],
+        ["Event", "Kỳ Đài - phòng ô ăn quan"],
         ["Site", "Kỳ Đài"],
         ["Date", pgnDate(startedAtMs)],
         ["A", whiteName],

@@ -173,10 +173,10 @@ export default function CaroComputerPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Cờ caro — đấu với máy
+          Cờ caro - đấu với máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          AI tìm chuỗi đe doạ, chạy ngay trong trình duyệt — không cần mạng.
+          AI tìm chuỗi đe doạ, chạy ngay trong trình duyệt - không cần mạng.
         </p>
         <div className="mt-8 max-w-xl rounded-[10px] border border-line bg-slate p-6">
           <p className="text-sm font-medium">Mức độ</p>
@@ -253,7 +253,7 @@ export default function CaroComputerPage() {
 
   const card = (color: CaroColor) => (
     <CaroPlayerCard
-      name={color === engineColor ? `Máy — ${levelInfo.name}` : "Bạn"}
+      name={color === engineColor ? `Máy - ${levelInfo.name}` : "Bạn"}
       subtitle={color === "x" ? "X đi trước" : undefined}
       color={color}
       clockMs={timeControl ? (color === "x" ? xMs : oMs) : null}
@@ -325,7 +325,7 @@ export default function CaroComputerPage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : result.winner === "x" ? "✕" : "○"}
+              {result.winner === null ? "½-½" : result.winner === "x" ? "✕" : "○"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {caroResultTitle(result.winner, result.termination)}

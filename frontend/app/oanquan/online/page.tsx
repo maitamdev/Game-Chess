@@ -1,17 +1,11 @@
-"use client";
+import RoomLobby from "@/components/online/RoomLobby";
 
-import QueuePanel from "@/components/online/QueuePanel";
-import { useAuthStore } from "@/stores/authStore";
-
-export default function OanquanQueuePage() {
-  const user = useAuthStore((s) => s.user);
+export default function OanquanRoomsPage() {
   return (
-    <QueuePanel
-      variant="oanquan"
-      title="Ô ăn quan — đấu online"
-      eloLabel="Elo ô ăn quan"
-      eloValue={user?.oq_elo}
-      basePath="/oanquan/online"
+    <RoomLobby
+      initialGame="oanquan"
+      lockedGame
+      heading="Ô ăn quan online"
     />
   );
 }

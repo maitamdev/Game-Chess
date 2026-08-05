@@ -73,7 +73,7 @@ export default function OanquanLocalPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Ô ăn quan — hai người một máy
+          Ô ăn quan - hai người một máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
           Rải sỏi quanh 12 ô, ăn cách ô, hết quan tàn dân đếm điểm. Đỏ cầm hàng
@@ -148,7 +148,7 @@ export default function OanquanLocalPage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : "🌾"}
+              {result.winner === null ? "½-½" : "🌾"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {oqResultTitle(result.winner, result.termination)}
@@ -158,7 +158,7 @@ export default function OanquanLocalPage() {
             </p>
             {result.scoreA !== undefined && result.scoreB !== undefined && (
               <p className="mt-2 font-[family-name:var(--font-mono)] text-sm text-parchment/90">
-                {oqSideName("a")} {result.scoreA} — {result.scoreB}{" "}
+                {oqSideName("a")} {result.scoreA} - {result.scoreB}{" "}
                 {oqSideName("b")}
               </p>
             )}

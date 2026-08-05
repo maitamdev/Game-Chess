@@ -8,7 +8,7 @@ interface EvalBarProps {
 
 /** Thanh lợi thế dọc cạnh bàn cờ. */
 export default function EvalBar({ evaluation, orientation }: EvalBarProps) {
-  // Nén về [0..1] bằng logistic; kẹp 5–95% để luôn thấy cả hai màu
+  // Nén về [0..1] bằng logistic; kẹp 5-95% để luôn thấy cả hai màu
   const raw = 1 / (1 + Math.exp(-evaluation / 300));
   const whiteShare = Math.min(0.95, Math.max(0.05, raw)) * 100;
   const whiteAtBottom = orientation === "white";

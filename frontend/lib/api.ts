@@ -1,8 +1,6 @@
 "use client";
 
-import { useAuthStore } from "@/stores/authStore";
-
-// API chạy cùng origin (Next.js route handlers) — có thể trỏ đi nơi khác
+// API chạy cùng origin (Next.js route handlers) - có thể trỏ đi nơi khác
 // qua NEXT_PUBLIC_API_URL khi cần.
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -19,56 +17,21 @@ export class ApiError extends Error {
 interface FetchOptions {
   method?: string;
   body?: unknown;
-  auth?: boolean;
 }
 
 async function rawFetch(path: string, opts: FetchOptions): Promise<Response> {
   const headers: Record<string, string> = {};
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
-  if (opts.auth) {
-    const token = useAuthStore.getState().accessToken;
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
   return fetch(`${API_URL}${path}`, {
     method: opts.method ?? (opts.body !== undefined ? "POST" : "GET"),
     headers,
+    credentials: "same-origin",
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
 }
 
-/** Làm mới access token bằng refresh token; trả về token mới hoặc null. */
-export async function refreshAccessToken(): Promise<string | null> {
-  const { refreshToken } = useAuthStore.getState();
-  if (!refreshToken) return null;
-  try {
-    const res = await fetch(`${API_URL}/api/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    if (!res.ok) {
-      // chỉ đăng xuất khi refresh token THỰC SỰ bị từ chối — lỗi 5xx/mạng
-      // thoáng qua giữa ván không được phép huỷ phiên đăng nhập
-      if (res.status === 401 || res.status === 403) {
-        useAuthStore.getState().logout();
-      }
-      return null;
-    }
-    const data = (await res.json()) as { access_token: string };
-    useAuthStore.getState().setAuth(data);
-    return data.access_token;
-  } catch {
-    return null;
-  }
-}
-
 export async function api<T>(path: string, opts: FetchOptions = {}): Promise<T> {
-  let res = await rawFetch(path, opts);
-  // access token hết hạn (15 phút) → thử refresh một lần rồi gọi lại
-  if (res.status === 401 && opts.auth) {
-    const newToken = await refreshAccessToken();
-    if (newToken) res = await rawFetch(path, opts);
-  }
+  const res = await rawFetch(path, opts);
   if (!res.ok) {
     let code = "UNKNOWN";
     let message = `Lỗi ${res.status}`;
@@ -91,7 +54,6 @@ export async function api<T>(path: string, opts: FetchOptions = {}): Promise<T> 
 export interface PlayerBrief {
   id: string;
   username: string;
-  elo: number;
 }
 
 export type Variant = "chess" | "xiangqi" | "caro" | "jungle" | "oanquan";
@@ -104,9 +66,6 @@ export interface GameSummary {
   time_control: string;
   result: string | null;
   termination: string | null;
-  white_elo_before: number | null;
-  black_elo_before: number | null;
-  elo_change: number | null;
   started_at: string;
   ended_at: string | null;
 }
@@ -124,42 +83,4 @@ export interface GameDetail extends GameSummary {
   pgn: string | null;
   final_fen: string | null;
   moves: MoveRecord[];
-}
-
-export interface PublicUser {
-  id: string;
-  username: string;
-  elo: number;
-  games_played: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  xq_elo: number;
-  xq_games_played: number;
-  xq_wins: number;
-  xq_losses: number;
-  xq_draws: number;
-  caro_elo: number;
-  caro_games_played: number;
-  caro_wins: number;
-  caro_losses: number;
-  caro_draws: number;
-  jg_elo: number;
-  jg_games_played: number;
-  jg_wins: number;
-  jg_losses: number;
-  jg_draws: number;
-  oq_elo: number;
-  oq_games_played: number;
-  oq_wins: number;
-  oq_losses: number;
-  oq_draws: number;
-  created_at: string;
-}
-
-export interface RatingPoint {
-  elo: number;
-  variant: Variant;
-  game_id: string | null;
-  created_at: string;
 }

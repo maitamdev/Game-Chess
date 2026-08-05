@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion } from "framer-motion";
+import { CastleTurret } from "@phosphor-icons/react";
+import JunglePiece from "@/components/jungle/JunglePiece";
 import {
   JG_DEN,
-  JG_EMOJI,
   JG_NAMES,
   JG_TRAPS,
   JG_WATER,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/jungle/rules";
 
 /**
- * Bàn cờ thú 7×9 — rừng, sông gợn sóng, bẫy khắc chéo, hang phát sáng.
+ * Bàn cờ thú 7×9 - rừng, sông gợn sóng, bẫy khắc chéo, hang phát sáng.
  * Tương tác nhấp-chọn + kéo-thả, xoay 180° cho bên Xanh, hoạt ảnh
  * trượt/ăn quân cùng ngôn ngữ với các bàn khác.
  */
@@ -56,8 +57,6 @@ function pos(square: string): { left: string; top: string } {
 
 interface DragState {
   from: string;
-  x: number;
-  y: number;
   over: string | null;
 }
 
@@ -77,42 +76,32 @@ function SquareBg({ index }: { index: number }) {
 
   if (isWater) {
     return (
-      <div
-        className="h-full w-full"
-        style={{
-          background:
-            "linear-gradient(180deg, #7fa3ad 0%, #6f96a2 100%)",
-          backgroundBlendMode: "overlay",
-        }}
-      >
-        <div
-          className="h-full w-full"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, transparent 0 7px, rgba(242,237,227,0.18) 7px 8px, transparent 8px 16px)",
-          }}
-        />
+      <div className="jg-water-square h-full w-full">
+        <span className="jg-water-ripple" />
       </div>
     );
   }
 
-  const base = (r + f) % 2 === 0 ? "#E9DCC0" : "#E0CFAC";
+  const base = (r + f) % 2 === 0 ? "#806A4D" : "#755E43";
 
   if (isDenR || isDenB) {
     return (
       <div
-        className="flex h-full w-full items-center justify-center"
+        className="jg-den-square flex h-full w-full items-center justify-center"
         style={{
-          background: `radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--brass) 45%, ${base}) 0%, ${base} 85%)`,
-        }}
+          "--jg-den-accent": isDenR ? RED : BLUE,
+          background: `radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--brass) 25%, ${base}) 0%, ${base} 76%)`,
+        } as React.CSSProperties}
       >
-        <span
+        <CastleTurret
           aria-hidden
-          className="text-[clamp(14px,3.2vh,26px)] leading-none"
-          style={{ color: isDenR ? RED : BLUE, opacity: 0.9 }}
-        >
-          ⛩
-        </span>
+          weight="duotone"
+          className="h-[44%] w-[44%]"
+          style={{
+            color: isDenR ? "#D77B64" : "#74A0BF",
+            filter: "drop-shadow(0 2px 3px rgba(16, 10, 5, .32))",
+          }}
+        />
       </div>
     );
   }
@@ -121,17 +110,23 @@ function SquareBg({ index }: { index: number }) {
     const trapColor = JG_TRAPS.r.has(index) ? RED : BLUE;
     return (
       <div
-        className="h-full w-full"
+        className="jg-trap-square h-full w-full"
         style={{
-          background: base,
-          backgroundImage: `repeating-linear-gradient(45deg, transparent 0 5px, ${trapColor}33 5px 7px), repeating-linear-gradient(-45deg, transparent 0 5px, ${trapColor}33 5px 7px)`,
-          boxShadow: `inset 0 0 0 1.5px ${trapColor}55`,
-        }}
-      />
+          "--jg-trap-accent": trapColor,
+          backgroundColor: base,
+        } as React.CSSProperties}
+      >
+        <span aria-hidden className="jg-trap-mark" />
+      </div>
     );
   }
 
-  return <div className="h-full w-full" style={{ background: base }} />;
+  return (
+    <div
+      className="jg-land-square h-full w-full"
+      style={{ "--jg-land": base } as React.CSSProperties}
+    />
+  );
 }
 
 export default function JungleBoard({
@@ -153,6 +148,8 @@ export default function JungleBoard({
   const [targets, setTargets] = useState<Map<string, JgMove>>(new Map());
   const [drag, setDrag] = useState<DragState | null>(null);
   const [dying, setDying] = useState<DyingPiece[]>([]);
+  const dragX = useMotionValue(0);
+  const dragY = useMotionValue(0);
 
   const dragArmRef = useRef<{
     from: string;
@@ -320,9 +317,15 @@ export default function JungleBoard({
       }
       const pt = localPoint(e);
       if (!pt) return;
-      setDrag({ from: arm.from, x: pt.x, y: pt.y, over: squareAt(e) });
+      dragX.set(pt.x);
+      dragY.set(pt.y);
+      const over = squareAt(e);
+      setDrag((current) => {
+        if (current?.from === arm.from && current.over === over) return current;
+        return { from: arm.from, over };
+      });
     },
-    [localPoint, squareAt],
+    [localPoint, squareAt, dragX, dragY],
   );
 
   const onPointerUp = useCallback(
@@ -349,41 +352,10 @@ export default function JungleBoard({
 
   const dragPiece = drag ? pieceAt.get(drag.from) : undefined;
   const counterRotate = rotated ? 180 : 0;
-  const pieceSize = `${(0.86 / 7) * 100}%`;
+  const pieceSize = `${(0.82 / 7) * 100}%`;
 
   const renderDisc = (p: { rank: JgRank; color: JgColor }) => {
-    const accent = p.color === "r" ? RED : BLUE;
-    return (
-      <span
-        className="relative flex h-full w-full select-none items-center justify-center rounded-full"
-        style={{
-          background: "linear-gradient(160deg, #F7EFDC 0%, #EBDBB7 100%)",
-          border: `2.5px solid ${accent}`,
-          boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.5)",
-          containerType: "size",
-        }}
-      >
-        <span aria-hidden style={{ fontSize: "58cqw", lineHeight: 1 }}>
-          {JG_EMOJI[p.rank]}
-        </span>
-        <span
-          aria-hidden
-          className="absolute flex items-center justify-center rounded-full font-bold"
-          style={{
-            right: "-2%",
-            bottom: "-2%",
-            width: "34cqw",
-            height: "34cqw",
-            background: accent,
-            color: "#F2EDE3",
-            fontSize: "22cqw",
-            fontFamily: "var(--font-mono)",
-          }}
-        >
-          {p.rank}
-        </span>
-      </span>
-    );
+    return <JunglePiece rank={p.rank} color={p.color} className="h-full w-full" />;
   };
 
   const marker = (square: string, node: React.ReactNode, z = 5, key?: string) => {
@@ -408,15 +380,15 @@ export default function JungleBoard({
 
   return (
     <div
-      className="relative"
+      className="jg-board-wrap relative w-full"
       style={{
-        width: "calc(min(72vh, 600px) * 7 / 9)",
+        width: "calc(min(68dvh, 690px) * 7 / 9)",
         maxWidth: "calc(100vw - 32px)",
       }}
     >
       <motion.div
         ref={boardRef}
-        className="relative w-full overflow-hidden rounded-[8px] border border-line select-none"
+        className="jg-board relative w-full overflow-hidden select-none"
         style={{ aspectRatio: "7 / 9", touchAction: "none" }}
         initial={false}
         animate={{ rotate: rotated ? 180 : 0 }}
@@ -436,7 +408,7 @@ export default function JungleBoard({
             const f = cell % 7;
             const r = 8 - vRow;
             return (
-              <div key={cell} className="relative border-[0.5px] border-[#c9b58c]">
+              <div key={cell} className="jg-square relative">
                 <SquareBg index={r * 7 + f} />
               </div>
             );
@@ -515,33 +487,44 @@ export default function JungleBoard({
         {pieces.map((p) => {
           const { left, top } = pos(p.square);
           const isDragging = drag?.from === p.square;
+          const isSelected = selected === p.square;
           return (
             <motion.div
               key={p.id}
-              className="pointer-events-none absolute"
+              layout="position"
+              layoutDependency={p.square}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
               style={{
+                left,
+                top,
                 width: pieceSize,
                 aspectRatio: "1",
                 zIndex: 10,
                 opacity: isDragging ? 0.3 : 1,
               }}
               initial={false}
-              animate={{ left, top, rotate: counterRotate }}
               transition={{
-                left: {
+                layout: {
                   duration: reduced || instantIdRef.current === p.id ? 0 : 0.18,
                   ease: MOVE_EASE,
                 },
-                top: {
-                  duration: reduced || instantIdRef.current === p.id ? 0 : 0.18,
-                  ease: MOVE_EASE,
-                },
-                rotate: { duration: reduced ? 0 : 0.4, ease: FLIP_EASE },
               }}
-              transformTemplate={(_, generated) => `translate(-50%, -50%) ${generated}`}
               aria-label={`${JG_NAMES[p.rank]} ${p.color === "r" ? "đỏ" : "xanh"} ${p.square}`}
             >
-              {renderDisc(p)}
+              <motion.div
+                className="h-full w-full"
+                initial={false}
+                animate={{
+                  rotate: counterRotate,
+                  scale: isSelected ? 1.055 : 1,
+                }}
+                transition={{
+                  rotate: { duration: reduced ? 0 : 0.4, ease: FLIP_EASE },
+                  scale: { duration: reduced ? 0 : 0.14, ease: MOVE_EASE },
+                }}
+              >
+                {renderDisc(p)}
+              </motion.div>
             </motion.div>
           );
         })}
@@ -567,11 +550,11 @@ export default function JungleBoard({
 
         {/* thú đang kéo */}
         {drag && dragPiece && (
-          <div
+          <motion.div
             className="pointer-events-none absolute"
             style={{
-              left: drag.x,
-              top: drag.y,
+              left: dragX,
+              top: dragY,
               width: pieceSize,
               aspectRatio: "1",
               transform: `translate(-50%, -50%) scale(1.1) rotate(${counterRotate}deg)`,
@@ -579,7 +562,7 @@ export default function JungleBoard({
             }}
           >
             {renderDisc(dragPiece)}
-          </div>
+          </motion.div>
         )}
       </motion.div>
     </div>

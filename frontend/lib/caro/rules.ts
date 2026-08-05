@@ -1,7 +1,7 @@
 /**
- * Luật cờ caro (Gomoku) — bàn 200×200 giao điểm, X đi trước,
+ * Luật cờ caro (Gomoku) - bàn 200×200 giao điểm, X đi trước,
  * thắng khi có ≥5 quân liên tiếp (ngang/dọc/chéo). Không có luật cấm
- * (freestyle) — đúng kiểu caro giấy phổ thông.
+ * (freestyle) - đúng kiểu caro giấy phổ thông.
  *
  * Toạ độ 0-based: uci = "x.y" (ví dụ "104.98"), san = "X104.98"/"O104.98".
  */
@@ -19,7 +19,7 @@ export interface CaroMove {
 }
 
 export interface CaroEnd {
-  winner: CaroColor | null; // null = hoà (bàn đầy — gần như không xảy ra)
+  winner: CaroColor | null; // null = hoà (bàn đầy - gần như không xảy ra)
   termination: string;
   /** 5+ ô tạo thành đường thắng, để tô sáng */
   line?: { x: number; y: number }[];

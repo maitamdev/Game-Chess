@@ -21,8 +21,8 @@ export interface SearchParams {
   maxDepth?: number;
   timeLimitMs?: number;
   /**
-   * Tìm điểm chính xác cho MỌI nước ở gốc (cửa sổ đầy đủ) — cần cho
-   * mức 1–2 khi phải chọn ngẫu nhiên trong các nước tốt nhất.
+   * Tìm điểm chính xác cho MỌI nước ở gốc (cửa sổ đầy đủ) - cần cho
+   * mức 1-2 khi phải chọn ngẫu nhiên trong các nước tốt nhất.
    */
   fullWindowRoot?: boolean;
   onIteration?: (depth: number, scoreForMover: number, bestUci: string) => void;

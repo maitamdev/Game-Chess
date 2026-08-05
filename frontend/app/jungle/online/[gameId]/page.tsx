@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ArrowSquareOut, Flag, Handshake } from "@phosphor-icons/react";
 import JungleBoard from "@/components/jungle/JungleBoard";
+import JungleGameFrame from "@/components/jungle/JungleGameFrame";
+import JunglePiece from "@/components/jungle/JunglePiece";
 import JunglePlayerCard from "@/components/jungle/JunglePlayerCard";
 import MoveList from "@/components/game/MoveList";
 import Modal from "@/components/ui/Modal";
@@ -12,19 +15,16 @@ import { useOnlineGame } from "@/lib/online/useOnlineGame";
 import { Jungle, type JgColor, type JgMove } from "@/lib/jungle/rules";
 import { trackJgPieces } from "@/lib/jungle/tracker";
 import {
-  jgCapturedEmoji,
+  jgCapturedRanks,
   jgResultTitle,
   JG_TERMINATION_LABELS,
   playJgMoveSound,
 } from "@/lib/jungle/labels";
-import { useAuthStore } from "@/stores/authStore";
 
 export default function JungleOnlineGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = params.gameId;
   const router = useRouter();
-  const hydrated = useAuthStore((s) => s.hydrated);
-  const accessToken = useAuthStore((s) => s.accessToken);
 
   const {
     state,
@@ -48,10 +48,6 @@ export default function JungleOnlineGamePage() {
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const [modalDismissed, setModalDismissed] = useState(false);
   const [confirmResign, setConfirmResign] = useState(false);
-
-  useEffect(() => {
-    if (hydrated && !accessToken) router.replace("/login?next=/jungle/online");
-  }, [hydrated, accessToken, router]);
 
   // server 'white' = Đỏ (r), 'black' = Xanh (b)
   const myColor: JgColor | null =
@@ -130,17 +126,11 @@ export default function JungleOnlineGamePage() {
   const orientation = myColor === "b" ? "blue" : "red";
   const topColor: JgColor = orientation === "red" ? "b" : "r";
   const bottomColor: JgColor = orientation === "red" ? "r" : "b";
-  const cardWidth = {
-    width: "calc(min(72vh, 600px) * 7 / 9)",
-    maxWidth: "calc(100vw - 32px)",
-  };
-
   const card = (color: JgColor) => {
     const player = color === "r" ? state?.white : state?.black;
     return (
       <JunglePlayerCard
         name={player?.username ?? "…"}
-        subtitle={player ? `Elo ${player.elo}` : undefined}
         color={color}
         clockMs={
           state ? (color === "r" ? displayTimes.white : displayTimes.black) : null
@@ -148,7 +138,8 @@ export default function JungleOnlineGamePage() {
         clockActive={
           !result && (state?.ply ?? 0) >= 1 && serverSideToMove === color
         }
-        capturedEmoji={jgCapturedEmoji(
+        isTurn={!result && serverSideToMove === color}
+        capturedRanks={jgCapturedRanks(
           verboseMoves,
           shownIndex,
           color === "r" ? "b" : "r",
@@ -166,37 +157,38 @@ export default function JungleOnlineGamePage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      {(connectionLost || oppSecondsLeft !== null || drawOfferFromOpponent) && (
-        <div className="mb-4 flex flex-col gap-2">
-          {connectionLost && (
-            <p className="rounded-[6px] border border-rust bg-rust/10 px-4 py-2 text-sm text-rust">
-              Mất kết nối — đang thử kết nối lại…
-            </p>
-          )}
-          {oppSecondsLeft !== null && (
-            <p className="rounded-[6px] border border-brass bg-brass/10 px-4 py-2 text-sm text-brass">
-              Đối thủ mất kết nối — xử thua sau {oppSecondsLeft} giây nếu không
-              quay lại.
-            </p>
-          )}
-          {drawOfferFromOpponent && !result && (
-            <div className="flex items-center gap-3 rounded-[6px] border border-line bg-slate px-4 py-2 text-sm">
-              <span>Đối thủ đề nghị hoà.</span>
-              <Button size="sm" variant="primary" onClick={() => respondDraw(true)}>
-                Đồng ý
-              </Button>
-              <Button size="sm" onClick={() => respondDraw(false)}>
-                Từ chối
-              </Button>
+    <>
+      <JungleGameFrame
+        notices={
+          (connectionLost || oppSecondsLeft !== null || drawOfferFromOpponent) && (
+            <div className="mb-4 flex flex-col gap-2">
+              {connectionLost && (
+                <p className="rounded-[10px] border border-rust bg-rust/10 px-4 py-2 text-sm text-rust">
+                  Mất kết nối - đang thử kết nối lại…
+                </p>
+              )}
+              {oppSecondsLeft !== null && (
+                <p className="rounded-[10px] border border-brass bg-brass/10 px-4 py-2 text-sm text-brass">
+                  Đối thủ mất kết nối - xử thua sau {oppSecondsLeft} giây nếu không
+                  quay lại.
+                </p>
+              )}
+              {drawOfferFromOpponent && !result && (
+                <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-line bg-slate px-4 py-2 text-sm">
+                  <span>Đối thủ đề nghị hoà.</span>
+                  <Button size="sm" variant="primary" onClick={() => respondDraw(true)}>
+                    Đồng ý
+                  </Button>
+                  <Button size="sm" onClick={() => respondDraw(false)}>
+                    Từ chối
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
-
-      <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
-        <div className="flex flex-col gap-3">
-          <div style={cardWidth}>{card(topColor)}</div>
+          )
+        }
+        topPlayer={card(topColor)}
+        board={
           <JungleBoard
             pieces={pieces}
             turn={turn}
@@ -207,17 +199,16 @@ export default function JungleOnlineGamePage() {
             onMove={handleMove}
             lastMove={lastMove}
           />
-          <div style={cardWidth}>{card(bottomColor)}</div>
-        </div>
-
-        <aside className="flex w-full max-w-sm flex-col gap-3 lg:h-[min(78vh,660px)] lg:w-72 lg:self-center">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-2">
+        }
+        bottomPlayer={card(bottomColor)}
+        actions={
+          <div className="grid grid-cols-2 gap-2">
               {myColor && !result && (
                 <>
-                  <Button
-                    size="sm"
-                    variant="danger"
+                  <button
+                    type="button"
+                    className="jg-action-button"
+                    data-danger="true"
                     onClick={() => {
                       if (!confirmResign) {
                         setConfirmResign(true);
@@ -228,35 +219,65 @@ export default function JungleOnlineGamePage() {
                       setConfirmResign(false);
                     }}
                   >
-                    {confirmResign ? "Chắc chắn?" : "⚑ Đầu hàng"}
-                  </Button>
-                  <Button size="sm" onClick={offerDraw}>
-                    ½ Cầu hoà
-                  </Button>
+                    <Flag aria-hidden size={19} weight="duotone" />
+                    <span>{confirmResign ? "Chắc chắn?" : "Đầu hàng"}</span>
+                  </button>
+                  <button type="button" className="jg-action-button" onClick={offerDraw}>
+                    <Handshake aria-hidden size={19} weight="duotone" />
+                    <span>Cầu hoà</span>
+                  </button>
                 </>
               )}
               {result && (
-                <Button size="sm" onClick={() => router.push(`/game/${gameId}`)}>
-                  Xem lại ván
-                </Button>
+                <button
+                  type="button"
+                  className="jg-action-button col-span-2"
+                  onClick={() => router.push(`/game/${gameId}`)}
+                >
+                  <ArrowSquareOut aria-hidden size={19} weight="duotone" />
+                  <span>Xem lại ván</span>
+                </button>
               )}
             </div>
-            <SoundToggle />
-          </div>
+        }
+        soundControl={<SoundToggle variant="jungle" />}
+        moveList={
           <MoveList
+            variant="jungle"
             moves={verboseMoves}
             viewIndex={shownIndex}
             onSelect={(i) => setViewIndex(i >= verboseMoves.length ? null : i)}
           />
-        </aside>
-      </div>
+        }
+        statusColor={serverSideToMove}
+        statusLabel={
+          result
+            ? "Ván đã kết thúc"
+            : pending
+              ? "Đang gửi nước đi"
+              : turn === myColor
+                ? "Lượt của bạn"
+                : "Lượt đối thủ"
+        }
+      />
 
       <Modal open={!!result && !modalDismissed} onClose={() => setModalDismissed(true)}>
         {result && (
           <div className="text-center">
-            <span aria-hidden className="text-2xl leading-none">
-              {result.raw === "white" ? "🦁" : result.raw === "black" ? "🐯" : "½–½"}
-            </span>
+            <div aria-hidden className="mx-auto flex h-12 items-center justify-center">
+              {result.raw === "white" || result.raw === "black" ? (
+                <JunglePiece
+                  rank={result.raw === "white" ? 7 : 6}
+                  color={result.raw === "white" ? "r" : "b"}
+                  showRank={false}
+                  className="h-12 w-12"
+                />
+              ) : (
+                <span className="font-[family-name:var(--font-mono)] text-xl text-brass">
+                  ½-½
+                </span>
+              )}
+            </div>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {jgResultTitle(
                 result.raw === "white" ? "r" : result.raw === "black" ? "b" : null,
@@ -266,26 +287,9 @@ export default function JungleOnlineGamePage() {
             <p className="mt-1 text-sm text-muted">
               {JG_TERMINATION_LABELS[result.termination] ?? result.termination}
             </p>
-            {myColor && result.raw !== "aborted" && (
-              <p className="mt-3 text-sm">
-                Elo cờ thú:{" "}
-                <span
-                  className={`font-[family-name:var(--font-mono)] ${
-                    result.eloChange >= 0 ? "text-sage" : "text-rust"
-                  }`}
-                >
-                  {result.eloChange >= 0 ? "+" : ""}
-                  {result.eloChange}
-                </span>{" "}
-                →{" "}
-                <span className="font-[family-name:var(--font-mono)]">
-                  {result.newElo}
-                </span>
-              </p>
-            )}
             <div className="mt-6 flex justify-center gap-2">
               <Button variant="primary" onClick={() => router.push("/jungle/online")}>
-                Tìm trận mới
+                Về sảnh
               </Button>
               {result.raw !== "aborted" && (
                 <Button onClick={() => router.push(`/game/${gameId}`)}>
@@ -303,6 +307,6 @@ export default function JungleOnlineGamePage() {
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 }

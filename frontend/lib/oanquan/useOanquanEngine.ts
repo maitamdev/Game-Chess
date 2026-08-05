@@ -18,7 +18,7 @@ interface Pending {
   timer: ReturnType<typeof setTimeout> | null;
 }
 
-/** Cầu nối worker engine ô ăn quan — cùng hợp đồng với các engine khác. */
+/** Cầu nối worker engine ô ăn quan - cùng hợp đồng với các engine khác. */
 export function useOanquanEngine(
   onResult: (kind: OqRequestKind, move: OqEngineMove) => void,
 ) {

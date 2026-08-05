@@ -180,10 +180,10 @@ export default function OanquanComputerPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Ô ăn quan — đấu với máy
+          Ô ăn quan - đấu với máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          AI tính chuỗi rải-ăn nhiều nước, chạy ngay trong trình duyệt — không
+          AI tính chuỗi rải-ăn nhiều nước, chạy ngay trong trình duyệt - không
           cần mạng.
         </p>
         <div className="mt-8 max-w-xl rounded-[10px] border border-line bg-slate p-6">
@@ -261,7 +261,7 @@ export default function OanquanComputerPage() {
 
   const card = (color: OqColor) => (
     <OanquanPlayerCard
-      name={color === engineColor ? `Máy — ${levelInfo.name}` : "Bạn"}
+      name={color === engineColor ? `Máy - ${levelInfo.name}` : "Bạn"}
       subtitle={color === "a" ? "Đỏ đi trước" : undefined}
       color={color}
       clockMs={timeControl ? (color === "a" ? aMs : bMs) : null}
@@ -333,7 +333,7 @@ export default function OanquanComputerPage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : "🌾"}
+              {result.winner === null ? "½-½" : "🌾"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {oqResultTitle(result.winner, result.termination)}
@@ -343,7 +343,7 @@ export default function OanquanComputerPage() {
             </p>
             {result.scoreA !== undefined && result.scoreB !== undefined && (
               <p className="mt-2 font-[family-name:var(--font-mono)] text-sm text-parchment/90">
-                {oqSideName("a")} {result.scoreA} — {result.scoreB}{" "}
+                {oqSideName("a")} {result.scoreA} - {result.scoreB}{" "}
                 {oqSideName("b")}
               </p>
             )}

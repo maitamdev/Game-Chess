@@ -18,13 +18,13 @@ interface Tile {
   value: number;
   row: number;
   col: number;
-  /** "new": vừa sinh ra — pop nhẹ; "merged": kết quả hợp nhất — pop trễ sau khi trượt */
+  /** "new": vừa sinh ra - pop nhẹ; "merged": kết quả hợp nhất - pop trễ sau khi trượt */
   spawn: "none" | "new" | "merged";
 }
 
 interface MoveResult {
   next: Tile[];
-  /** Ô đã bị "nuốt" trong hợp nhất — vẫn trượt tới đích rồi bị ô mới che lên */
+  /** Ô đã bị "nuốt" trong hợp nhất - vẫn trượt tới đích rồi bị ô mới che lên */
   ghosts: Tile[];
   gained: number;
   moved: boolean;
@@ -440,7 +440,7 @@ export default function Game2048Page() {
                   <span className="font-[family-name:var(--font-mono)] text-parchment">
                     {score}
                   </span>
-                  {score >= best && score > 0 ? " — kỷ lục mới!" : ""}
+                  {score >= best && score > 0 ? " - kỷ lục mới!" : ""}
                 </p>
                 <Button variant="primary" onClick={newGame}>
                   Chơi lại
@@ -462,12 +462,12 @@ export default function Game2048Page() {
               toàn bộ thẻ về một phía.
             </li>
             <li>
-              Hai thẻ cùng số chạm nhau sẽ gộp thành một thẻ gấp đôi — mỗi thẻ chỉ gộp
+              Hai thẻ cùng số chạm nhau sẽ gộp thành một thẻ gấp đôi - mỗi thẻ chỉ gộp
               một lần mỗi lượt. Điểm cộng bằng giá trị thẻ mới.
             </li>
             <li>Sau mỗi lượt, một thẻ 2 (hoặc hiếm hơn là 4) xuất hiện ở ô trống.</li>
             <li>
-              Ghép được thẻ <span className="text-brass">2048</span> là thắng — nhưng bạn
+              Ghép được thẻ <span className="text-brass">2048</span> là thắng - nhưng bạn
               vẫn có thể chơi tiếp để phá kỷ lục. Hết ô trống và hết nước gộp là thua.
             </li>
           </ul>

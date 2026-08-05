@@ -90,11 +90,11 @@ export default function XiangqiLocalPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Cờ tướng — hai người một máy
+          Cờ tướng - hai người một máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
           Thay phiên nhau trên cùng thiết bị. Bàn cờ tự xoay về phía người đang
-          đi — có thể tắt nếu muốn giữ nguyên hướng.
+          đi - có thể tắt nếu muốn giữ nguyên hướng.
         </p>
         <div className="mt-8 max-w-sm rounded-[10px] border border-line bg-slate p-6">
           <p className="text-sm font-medium">Đồng hồ</p>
@@ -169,7 +169,7 @@ export default function XiangqiLocalPage() {
         {result && (
           <div className="text-center">
             <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : result.winner === "r" ? "1–0" : "0–1"}
+              {result.winner === null ? "½-½" : result.winner === "r" ? "1-0" : "0-1"}
             </span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {xqResultTitle(result.winner, result.termination)}

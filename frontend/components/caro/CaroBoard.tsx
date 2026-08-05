@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CARO_SIZE, caroUci, type CaroColor, type CaroMove } from "@/lib/caro/rules";
 
 /**
- * Bàn caro 200×200 giao điểm — virtualized:
+ * Bàn caro 200×200 giao điểm - virtualized:
  * - lưới vẽ bằng CSS repeating-gradient (không render 40 000 ô)
  * - chỉ render quân đã đặt + các lớp phủ
  * - kéo để di chuyển, lăn chuột / nút để phóng to-thu nhỏ
@@ -245,7 +245,7 @@ export default function CaroBoard({
       onPointerLeave={() => setHover(null)}
       onWheel={onWheel}
     >
-      {/* thế giới 200×200 — lưới bằng gradient, chỉ quân được render */}
+      {/* thế giới 200×200 - lưới bằng gradient, chỉ quân được render */}
       <div
         className="absolute left-0 top-0"
         style={{

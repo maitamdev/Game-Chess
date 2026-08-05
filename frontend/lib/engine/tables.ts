@@ -1,6 +1,6 @@
 import type { PieceSymbol } from "chess.js";
 
-/** Chất quân (centipawn) — mục 6 */
+/** Chất quân (centipawn) - mục 6 */
 export const PIECE_VALUES: Record<PieceSymbol, number> = {
   p: 100,
   n: 320,
@@ -87,7 +87,7 @@ export const KING_MIDGAME_TABLE = [
    20, 30, 10,  0,  0, 10, 30, 20,
 ];
 
-/** Bảng riêng cho tàn cuộc với quân Vua — mục 6 */
+/** Bảng riêng cho tàn cuộc với quân Vua - mục 6 */
 // prettier-ignore
 export const KING_ENDGAME_TABLE = [
   -50,-40,-30,-20,-20,-30,-40,-50,

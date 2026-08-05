@@ -55,7 +55,7 @@ function formatTime(totalSeconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-/* ===== Thẻ bài — lật 3D bằng perspective + rotateY ===== */
+/* ===== Thẻ bài - lật 3D bằng perspective + rotateY ===== */
 
 function MemoryCard({
   emoji,
@@ -186,7 +186,7 @@ export default function LatThePage() {
         try {
           localStorage.setItem(bestKey(size), String(finalMoves));
         } catch {
-          // localStorage bị chặn — bỏ qua
+          // localStorage bị chặn - bỏ qua
         }
       }
     },
@@ -248,7 +248,7 @@ export default function LatThePage() {
           Lật Thẻ
         </h1>
         <p className="mt-3 text-base text-muted">
-          Trí nhớ kỳ thủ — lật hai thẻ mỗi lượt, tìm đủ cặp giống nhau với càng
+          Trí nhớ kỳ thủ - lật hai thẻ mỗi lượt, tìm đủ cặp giống nhau với càng
           ít lượt càng tốt.
         </p>
       </div>
@@ -283,7 +283,7 @@ export default function LatThePage() {
           { label: "Thời gian", value: formatTime(seconds) },
           {
             label: "Kỷ lục",
-            value: bestForSize === null ? "—" : `${bestForSize} lượt`,
+            value: bestForSize === null ? "-" : `${bestForSize} lượt`,
           },
         ].map((stat) => (
           <div

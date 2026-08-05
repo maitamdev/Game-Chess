@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import JungleBoard from "@/components/jungle/JungleBoard";
+import JungleGameFrame from "@/components/jungle/JungleGameFrame";
+import JunglePiece from "@/components/jungle/JunglePiece";
 import JunglePlayerCard from "@/components/jungle/JunglePlayerCard";
 import MoveList from "@/components/game/MoveList";
 import GameControls from "@/components/game/GameControls";
@@ -12,7 +14,7 @@ import { useJungleStore } from "@/stores/jungleStore";
 import { useJungleClockTicker } from "@/lib/jungle/useJungleClock";
 import { trackJgPieces } from "@/lib/jungle/tracker";
 import {
-  jgCapturedEmoji,
+  jgCapturedRanks,
   jgResultTitle,
   JG_TERMINATION_LABELS,
   playJgMoveSound,
@@ -74,7 +76,8 @@ export default function JungleLocalPage() {
       color={color}
       clockMs={timeControl ? (color === "r" ? redMs : blueMs) : null}
       clockActive={status === "playing" && clockRunning && turn === color}
-      capturedEmoji={jgCapturedEmoji(moves, viewIndex, color === "r" ? "b" : "r")}
+      isTurn={status === "playing" && turn === color}
+      capturedRanks={jgCapturedRanks(moves, viewIndex, color === "r" ? "b" : "r")}
     />
   );
 
@@ -82,11 +85,11 @@ export default function JungleLocalPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-          Cờ thú — hai người một máy
+          Cờ thú - hai người một máy
         </h1>
         <p className="mt-2 max-w-lg text-sm text-muted">
-          Đưa thú vào hang ⛩ của đối phương, hoặc ăn sạch thú của họ. Cẩn thận
-          bẫy quanh hang — thú đứng trong bẫy địch bị mọi con ăn được.
+          Đưa thú vào hang của đối phương, hoặc ăn sạch thú của họ. Cẩn thận
+          bẫy quanh hang - thú đứng trong bẫy địch bị mọi con ăn được.
         </p>
         <div className="mt-8 max-w-sm rounded-[10px] border border-line bg-slate p-6">
           <p className="text-sm font-medium">Đồng hồ</p>
@@ -114,15 +117,14 @@ export default function JungleLocalPage() {
     );
   }
 
-  const cardWidth = { width: "calc(min(72vh, 600px) * 7 / 9)", maxWidth: "calc(100vw - 32px)" };
   const topColor: JgColor = orientation === "red" ? "b" : "r";
   const bottomColor: JgColor = orientation === "red" ? "r" : "b";
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
-        <div className="flex flex-col gap-3">
-          <div style={cardWidth}>{card(topColor)}</div>
+    <>
+      <JungleGameFrame
+        topPlayer={card(topColor)}
+        board={
           <JungleBoard
             pieces={pieces}
             turn={turn}
@@ -133,12 +135,11 @@ export default function JungleLocalPage() {
             onMove={handleMove}
             lastMove={lastMove}
           />
-          <div style={cardWidth}>{card(bottomColor)}</div>
-        </div>
-
-        <aside className="flex w-full max-w-sm flex-col gap-3 lg:h-[min(78vh,660px)] lg:w-72 lg:self-center">
-          <div className="flex items-center justify-between">
+        }
+        bottomPlayer={card(bottomColor)}
+        actions={
             <GameControls
+              variant="jungle"
               onUndo={() => useJungleStore.getState().undo(1)}
               undoDisabled={status !== "playing" || moves.length === 0}
               onFlip={() => useJungleStore.getState().flip()}
@@ -146,15 +147,25 @@ export default function JungleLocalPage() {
               onToggleAutoFlip={(v) => useJungleStore.getState().setAutoFlip(v)}
               onNewGame={() => useJungleStore.setState({ status: "idle" })}
             />
-            <SoundToggle />
-          </div>
+        }
+        soundControl={<SoundToggle variant="jungle" />}
+        moveList={
           <MoveList
+            variant="jungle"
             moves={moves}
             viewIndex={viewIndex}
             onSelect={(i) => useJungleStore.getState().setView(i)}
           />
-        </aside>
-      </div>
+        }
+        statusColor={turn}
+        statusLabel={
+          status === "over"
+            ? "Ván đã kết thúc"
+            : turn === "r"
+              ? "Lượt Đỏ"
+              : "Lượt Xanh"
+        }
+      />
 
       <Modal
         open={status === "over" && !modalDismissed}
@@ -162,9 +173,20 @@ export default function JungleLocalPage() {
       >
         {result && (
           <div className="text-center">
-            <span aria-hidden className="text-2xl leading-none">
-              {result.winner === null ? "½–½" : result.winner === "r" ? "🦁" : "🐯"}
-            </span>
+            <div aria-hidden className="mx-auto flex h-12 items-center justify-center">
+              {result.winner === null ? (
+                <span className="font-[family-name:var(--font-mono)] text-xl text-brass">
+                  ½-½
+                </span>
+              ) : (
+                <JunglePiece
+                  rank={result.winner === "r" ? 7 : 6}
+                  color={result.winner}
+                  showRank={false}
+                  className="h-12 w-12"
+                />
+              )}
+            </div>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl font-semibold">
               {jgResultTitle(result.winner, result.termination)}
             </h2>
@@ -194,6 +216,6 @@ export default function JungleLocalPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 }

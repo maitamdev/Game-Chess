@@ -1,17 +1,17 @@
-import { JG_EMOJI, type JgColor, type JgRank } from "./rules";
+import { type JgColor, type JgRank } from "./rules";
 import { playSound } from "@/lib/sounds";
 
-/** emoji các thú màu `capturedColor` đã bị bên kia bắt (tới nước upTo) */
-export function jgCapturedEmoji(
+/** Các thú màu `capturedColor` đã bị bên kia bắt (tới nước upTo). */
+export function jgCapturedRanks(
   moves: readonly { captured?: JgRank; color: JgColor }[],
   upTo: number,
   capturedColor: JgColor,
-): string {
-  let out = "";
+): JgRank[] {
+  const out: JgRank[] = [];
   for (let i = 0; i < upTo && i < moves.length; i++) {
     const m = moves[i];
     if (m.captured !== undefined && m.color !== capturedColor) {
-      out += JG_EMOJI[m.captured];
+      out.push(m.captured);
     }
   }
   return out;
@@ -20,12 +20,12 @@ export function jgCapturedEmoji(
 export const JG_TERMINATION_LABELS: Record<string, string> = {
   den: "Vào được hang đối phương",
   no_pieces: "Đối phương hết sạch thú",
-  stalemate: "Hết nước đi — thua cuộc",
+  stalemate: "Hết nước đi - thua cuộc",
   repetition: "Hoà do lặp thế 3 lần",
   timeout: "Hết giờ",
   resignation: "Đầu hàng",
   agreement: "Hoà theo thoả thuận",
-  aborted: "Không có nước đi nào — không tính Elo",
+  aborted: "Ván chưa bắt đầu",
 };
 
 export function jgResultTitle(winner: JgColor | null, termination: string): string {
