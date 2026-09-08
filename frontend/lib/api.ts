@@ -26,6 +26,9 @@ async function rawFetch(path: string, opts: FetchOptions): Promise<Response> {
     method: opts.method ?? (opts.body !== undefined ? "POST" : "GET"),
     headers,
     credentials: "same-origin",
+    // API cùng origin chứa dữ liệu phiên/phòng/nước đi luôn thay đổi.
+    // Không tái sử dụng snapshot GET cũ giữa các nhịp đồng bộ.
+    cache: "no-store",
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
 }

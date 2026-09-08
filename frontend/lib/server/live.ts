@@ -27,6 +27,8 @@ import { type Variant } from "./variants";
 const DISCONNECT_FORFEIT_MS = 90_000;
 const ABORT_MS = 30_000;
 const HARD_ABORT_MS = 120_000;
+// Poll nhanh để nhận nước đi nhưng không cần ghi heartbeat ở mọi request.
+const HEARTBEAT_WRITE_INTERVAL_MS = 4_000;
 
 // ---------------------------------------------------------------------------
 // Trạng thái ván + phán quyết lazy
@@ -340,6 +342,14 @@ async function heartbeat(
   now: number,
 ): Promise<void> {
   if (color === null || game.status !== "active") return;
+  const lastSeen = color === "white" ? game.whiteLastSeen : game.blackLastSeen;
+  if (
+    lastSeen !== null &&
+    now - lastSeen >= 0 &&
+    now - lastSeen < HEARTBEAT_WRITE_INTERVAL_MS
+  ) {
+    return;
+  }
   const patch =
     color === "white" ? { whiteLastSeen: now } : { blackLastSeen: now };
   await db.update(games).set(patch).where(eq(games.id, game.id));

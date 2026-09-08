@@ -17,9 +17,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, ApiError } from "@/lib/api";
+import { isFresherLiveState } from "@/lib/online/stateFreshness";
 import { playSound } from "@/lib/sounds";
 
-const POLL_MS = 1500;
+// Khoảng nghỉ sau khi request trước xong; không cho các GET state chồng nhau.
+const POLL_MS = 700;
 /** đối thủ không poll quá ngưỡng này (server đo) → coi là mất kết nối */
 const OPP_DISCONNECT_VISIBLE_MS = 6000;
 
@@ -85,6 +87,8 @@ export function useOnlineGame(gameId: string | null) {
   }, [state]);
 
   const applyState = useCallback((st: LiveState) => {
+    // Bảo vệ cả polling đến sai thứ tự lẫn GET cũ về sau POST move.
+    if (!isFresherLiveState(stateRef.current, st)) return;
     stateRef.current = st;
     timesRef.current = { at: performance.now() };
     failsRef.current = 0;
@@ -97,8 +101,15 @@ export function useOnlineGame(gameId: string | null) {
   useEffect(() => {
     if (gameId === null) return;
     let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let polling = false;
+
+    const shouldPoll = () =>
+      stateRef.current?.status !== "finished" && !notFoundRef.current;
 
     const tick = async () => {
+      if (stopped || polling || !shouldPoll()) return;
+      polling = true;
       try {
         const st = await api<LiveState>(`/api/live/${gameId}/state`);
         if (!stopped) applyState(st);
@@ -111,25 +122,25 @@ export function useOnlineGame(gameId: string | null) {
         }
         failsRef.current += 1;
         if (failsRef.current >= 2) setConnectionLost(true);
+      } finally {
+        polling = false;
+        if (!stopped && shouldPoll()) timer = setTimeout(tick, POLL_MS);
       }
     };
 
-    const shouldPoll = () =>
-      stateRef.current?.status !== "finished" && !notFoundRef.current;
-
-    tick();
-    const timer = setInterval(() => {
-      if (shouldPoll()) tick();
-    }, POLL_MS);
+    void tick();
     // tab nền bị browser bóp setInterval xuống ~1 nhịp/phút - poll ngay khi
     // tab hiện lại để heartbeat/đồng hồ bắt kịp
     const onVisible = () => {
-      if (document.visibilityState === "visible" && shouldPoll()) tick();
+      if (document.visibilityState !== "visible" || !shouldPoll()) return;
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      void tick();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       stopped = true;
-      clearInterval(timer);
+      if (timer !== null) clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [gameId, applyState]);
