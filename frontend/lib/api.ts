@@ -26,8 +26,8 @@ async function rawFetch(path: string, opts: FetchOptions): Promise<Response> {
     method: opts.method ?? (opts.body !== undefined ? "POST" : "GET"),
     headers,
     credentials: "same-origin",
-    // API cùng origin chứa dữ liệu phiên/phòng/nước đi luôn thay đổi.
-    // Không tái sử dụng snapshot GET cũ giữa các nhịp đồng bộ.
+    // Các endpoint cùng origin đều là dữ liệu động (phiên, phòng, nước đi).
+    // Không cho browser tái sử dụng snapshot GET cũ giữa các nhịp đồng bộ.
     cache: "no-store",
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
@@ -59,7 +59,16 @@ export interface PlayerBrief {
   username: string;
 }
 
-export type Variant = "chess" | "xiangqi" | "caro" | "jungle" | "oanquan";
+export type Variant =
+  | "chess"
+  | "xiangqi"
+  | "caro"
+  | "jungle"
+  | "oanquan"
+  | "reversi"
+  | "connect4"
+  | "draughts"
+  | "dots";
 
 export interface GameSummary {
   id: string;

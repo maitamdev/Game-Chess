@@ -27,9 +27,9 @@ import { TIME_CONTROLS, type TimeControl } from "@/lib/types";
 const LEVELS: { level: CaroEngineLevel; name: string; detail: string }[] = [
   { level: 1, name: "Người mới", detail: "Nhìn 1 nước, hay ngẫu hứng" },
   { level: 2, name: "Dễ", detail: "Nhìn 2 nước, thi thoảng sơ hở" },
-  { level: 3, name: "Trung bình", detail: "Nhìn 3 nước, chắc tay" },
-  { level: 4, name: "Khó", detail: "1 giây mỗi nước" },
-  { level: 5, name: "Rất khó", detail: "2,5 giây mỗi nước" },
+  { level: 3, name: "Trung bình", detail: "Nhìn 4 nước, thủ chắc" },
+  { level: 4, name: "Khó", detail: "Đòn phối hợp 4-3, 3-3, VCF 14 nước" },
+  { level: 5, name: "Bất khả chiến bại", detail: "Grandmaster VCF & VCT hai chiều, Threat-Space Pruning, không thể thắng" },
 ];
 
 type ColorChoice = "x" | "o" | "random";

@@ -1,0 +1,6 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Cờ Vây | Kỳ Đài", description: "Chơi Cờ Vây 9×9 local hoặc đấu máy." };
+
+export default function GoLandingPage() { return <div className="app-shell py-12 sm:py-16"><p className="text-xs font-bold uppercase tracking-[0.18em] text-brass">Game mới</p><h1 className="mt-4 text-5xl font-extrabold tracking-[-0.055em]">Cờ Vây 9×9</h1><p className="mt-5 max-w-2xl leading-7 text-muted">Bản bàn nhỏ để luyện khí, bắt nhóm và đọc vùng trước khi mở rộng lên bàn 13×13 hoặc 19×19.</p><div className="mt-9 grid max-w-2xl gap-3 sm:grid-cols-2"><Link href="/covay/computer" className="rounded-[12px] border border-brass/45 bg-brass/10 p-5 transition hover:border-brass"><strong className="text-lg text-parchment">Đấu với máy</strong><span className="mt-2 block text-sm text-muted">Máy chọn điểm gần trung tâm.</span></Link><Link href="/covay/local" className="rounded-[12px] border border-line bg-slate p-5 transition hover:border-brass/50"><strong className="text-lg text-parchment">Hai người một máy</strong><span className="mt-2 block text-sm text-muted">Luân phiên Đen và Trắng.</span></Link></div></div>; }

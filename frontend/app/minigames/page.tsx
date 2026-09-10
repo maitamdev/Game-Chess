@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr/ArrowRight";
 import { Bomb } from "@phosphor-icons/react/dist/ssr/Bomb";
@@ -49,13 +50,15 @@ const minigames = [
 export default function MinigamesPage() {
   return (
     <div className="app-shell py-10 sm:py-14">
-      <header className="max-w-2xl">
-        <h1 className="text-4xl font-extrabold tracking-[-0.045em] sm:text-5xl">
-          Góc giải trí
-        </h1>
-        <p className="mt-4 max-w-xl leading-7 text-muted">
-          Những ván ngắn để đổi nhịp, mở trình duyệt là chơi và luôn sẵn sàng.
-        </p>
+      <header className="grid overflow-hidden rounded-[18px] border border-line bg-slate lg:grid-cols-[minmax(0,.78fr)_minmax(320px,1.22fr)]">
+        <div className="p-7 sm:p-9 lg:p-12">
+          <h1 className="text-4xl font-extrabold tracking-[-0.045em] sm:text-5xl">Góc giải trí</h1>
+          <p className="mt-4 max-w-xl leading-7 text-muted">Những ván ngắn để đổi nhịp, mở trình duyệt là chơi và luôn sẵn sàng.</p>
+        </div>
+        <div className="relative min-h-[240px] border-t border-line lg:border-l lg:border-t-0">
+          <Image src="/images/branding/quick-games-feature.webp" alt="Bàn game nhanh với xúc xắc và các ô màu" fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover object-center" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,28,35,.9),rgba(16,28,35,.12)_70%,rgba(16,28,35,.08))]" />
+        </div>
       </header>
 
       <div className="mt-9 grid gap-4 md:grid-cols-2">

@@ -15,6 +15,69 @@
       "when": 1785427415224,
       "tag": "0001_magenta_alice",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786552289042,
+      "tag": "0002_oval_payback",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786552985327,
+      "tag": "0003_curvy_plazm",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786553541033,
+      "tag": "0004_steady_kabuki",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786554056553,
+      "tag": "0005_massive_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786554415946,
+      "tag": "0006_long_firebrand",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786554920941,
+      "tag": "0007_big_aqueduct",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786561000000,
+      "tag": "0008_v2_online_arcade",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786562000000,
+      "tag": "0009_v2_competition_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786563000000,
+      "tag": "0010_v2_draughts_dots_online",
+      "breakpoints": true
     }
   ]
 }

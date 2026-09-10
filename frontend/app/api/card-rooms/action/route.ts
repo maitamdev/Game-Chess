@@ -13,6 +13,19 @@ const Input = z.object({
       cardId: z.number().int(),
       color: z.enum(["red", "yellow", "green", "blue"]).optional(),
     }),
+    z.object({
+      type: z.literal("play_cards"),
+      cardIds: z.array(z.string().min(1).max(32)).min(1).max(13),
+    }),
+    z.object({ type: z.literal("pass") }),
+    z.object({ type: z.literal("roll") }),
+    z.object({
+      type: z.literal("move_piece"),
+      pieceId: z.string().min(1).max(32),
+    }),
+    z.object({ type: z.literal("hit") }),
+    z.object({ type: z.literal("stand") }),
+    z.object({ type: z.literal("reveal") }),
   ]),
 });
 

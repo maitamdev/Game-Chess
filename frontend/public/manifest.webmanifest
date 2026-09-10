@@ -1,0 +1,21 @@
+{
+  "name": "Kỳ Đài — Game hub Việt Nam",
+  "short_name": "Kỳ Đài",
+  "description": "Cờ, game bài và trò chơi trí tuệ Việt Nam trên một đấu trường trực tuyến.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071117",
+  "theme_color": "#071117",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

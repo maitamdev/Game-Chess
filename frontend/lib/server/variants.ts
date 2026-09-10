@@ -1,14 +1,13 @@
-/** Danh mục các game bàn cờ chạy trên luồng phòng chung. */
+/** Các variant bàn cờ hiện được server live hỗ trợ. */
 
-export type Variant = "chess" | "xiangqi" | "caro" | "jungle" | "oanquan";
+import {
+  BOARD_GAME_IDS,
+  type BoardGameId,
+} from "@/lib/games/registry";
 
-export const VALID_VARIANTS: readonly Variant[] = [
-  "chess",
-  "xiangqi",
-  "caro",
-  "jungle",
-  "oanquan",
-];
+export type Variant = BoardGameId;
+
+export const VALID_VARIANTS = BOARD_GAME_IDS;
 
 export const VALID_TIME_CONTROLS = ["3+2", "5+0", "10+0", "15+10"] as const;
 

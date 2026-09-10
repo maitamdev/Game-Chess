@@ -1,18 +1,14 @@
-export type RoomGameType =
-  | "chess"
-  | "xiangqi"
-  | "caro"
-  | "jungle"
-  | "oanquan"
-  | "uno";
+import {
+  BOARD_GAME_IDS,
+  GAME_DEFINITIONS,
+  type RoomGameType,
+} from "@/lib/games/registry";
 
-const GAME_PATHS: Record<Exclude<RoomGameType, "uno">, string> = {
-  chess: "/play/online",
-  xiangqi: "/xiangqi/online",
-  caro: "/caro/online",
-  jungle: "/jungle/online",
-  oanquan: "/oanquan/online",
-};
+export type { RoomGameType } from "@/lib/games/registry";
+
+const GAME_PATHS = Object.fromEntries(
+  BOARD_GAME_IDS.map((game) => [game, GAME_DEFINITIONS[game].onlinePath]),
+) as Record<Exclude<RoomGameType, "uno">, string>;
 
 export function roomDestination(room: {
   code: string;
@@ -22,6 +18,15 @@ export function roomDestination(room: {
 }): string | null {
   if (room.game_type === "uno") {
     return `/cards/uno/room/${room.code}`;
+  }
+  if (room.game_type === "tienlen") {
+    return `/cards/tienlen/room/${room.code}`;
+  }
+  if (room.game_type === "ngua") {
+    return `/ngua/room/${room.code}`;
+  }
+  if (room.game_type === "xidach" || room.game_type === "baicao") {
+    return `/cards/${room.game_type}/room/${room.code}`;
   }
   if (room.status === "playing" && room.game_id) {
     return `${GAME_PATHS[room.game_type]}/${room.game_id}`;

@@ -9,11 +9,11 @@ type InMessage =
   | { type: "stop" };
 
 const LEVEL_PARAMS: Record<CaroEngineLevel, CaroSearchParams & { k?: number }> = {
-  1: { maxDepth: 1, k: 8 },
-  2: { maxDepth: 2, k: 8 },
-  3: { maxDepth: 3, k: 8 },
-  4: { timeLimitMs: 1000, k: 10 },
-  5: { timeLimitMs: 2500, k: 12 },
+  1: { maxDepth: 1, k: 6, useVcf: false, useVct: false },
+  2: { maxDepth: 2, k: 8, useVcf: false, useVct: false },
+  3: { maxDepth: 4, k: 10, timeLimitMs: 800, useVcf: true, useVct: false },
+  4: { maxDepth: 14, k: 12, timeLimitMs: 1500, useVcf: true, useVct: true },
+  5: { maxDepth: 20, k: 16, timeLimitMs: 3000, useVcf: true, useVct: true },
 };
 
 function pickMove(ranked: CaroRanked[], level: CaroEngineLevel): CaroRanked {

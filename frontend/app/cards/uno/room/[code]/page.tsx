@@ -12,6 +12,7 @@ import UnoCardView, {
   UNO_TONES,
   UnoCardBack,
 } from "@/components/cards/UnoCardView";
+import RoomChat from "@/components/online/RoomChat";
 import Button from "@/components/ui/Button";
 import { api, ApiError } from "@/lib/api";
 import {
@@ -149,6 +150,18 @@ export default function UnoRoomPage() {
       await api("/api/card-rooms/leave", { body: { code } });
     } finally {
       router.push("/cards/uno");
+    }
+  };
+
+  const rematch = async () => {
+    setBusy(true);
+    try {
+      setRoom(await api<Room>("/api/card-rooms/rematch", { body: { code } }));
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "Không bắt đầu lại được");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -377,6 +390,21 @@ export default function UnoRoomPage() {
           </div>
         </section>
       ) : null}
+
+      {room.status === "finished" && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 rounded-[14px] border border-brass/25 bg-brass/[.06] p-4">
+          <p className="text-sm text-muted">Ván đã kết thúc.</p>
+          {room.is_host ? (
+            <Button variant="primary" onClick={() => void rematch()} disabled={busy}>Chơi ván mới</Button>
+          ) : (
+            <p className="text-sm text-muted">Chờ chủ phòng bắt đầu ván mới.</p>
+          )}
+        </div>
+      )}
+
+      <div className="mt-4">
+        <RoomChat code={code} />
+      </div>
 
       {error && (
         <p className="mt-3 rounded-[9px] border border-rust/50 bg-rust/10 px-4 py-3 text-sm text-[#e48a78]">

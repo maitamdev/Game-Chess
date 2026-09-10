@@ -8,6 +8,7 @@ import MoveList from "@/components/game/MoveList";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import SoundToggle from "@/components/ui/SoundToggle";
+import AmbientMusicToggle from "@/components/ui/AmbientMusicToggle";
 import { useOnlineGame } from "@/lib/online/useOnlineGame";
 import { Xiangqi, type XqColor, type XqMove } from "@/lib/xiangqi/rules";
 import { trackXqPieces } from "@/lib/xiangqi/tracker";
@@ -241,7 +242,10 @@ export default function XiangqiOnlineGamePage() {
                 </Button>
               )}
             </div>
-            <SoundToggle />
+            <div className="flex items-center gap-1">
+              <AmbientMusicToggle />
+              <SoundToggle />
+            </div>
           </div>
           <MoveList
             moves={verboseMoves}

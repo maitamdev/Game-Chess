@@ -21,13 +21,16 @@ import type { GameRow, MoveRow, UserRow } from "./db";
 import { ApiError } from "./errors";
 import { createRules, OTHER, type Color, type ServerRules } from "./rules";
 import { type Variant } from "./variants";
+import { recordBoardRating } from "./ratings";
+import { syncPlayerAchievements } from "./competition";
 
 // 90s (backend cũ 60s): heartbeat giờ là setInterval phía client, tab nền bị
 // browser bóp xuống ~1 nhịp/phút - ngưỡng phải lớn hơn hẳn 60s để không xử oan.
 const DISCONNECT_FORFEIT_MS = 90_000;
 const ABORT_MS = 30_000;
 const HARD_ABORT_MS = 120_000;
-// Poll nhanh để nhận nước đi nhưng không cần ghi heartbeat ở mọi request.
+// Poll nhanh để nhận nước đi, nhưng không cần ghi heartbeat ở mọi request.
+// Giảm một DB write/round-trip cho phần lớn lượt đọc state.
 const HEARTBEAT_WRITE_INTERVAL_MS = 4_000;
 
 // ---------------------------------------------------------------------------
@@ -184,6 +187,31 @@ async function finalize(
 
   if (!won) return false;
 
+  // Rating là lớp phụ trợ: không được làm mất kết quả ván nếu phần thống kê
+  // tạm thời lỗi. Unique history theo game giúp request lặp không cộng điểm hai lần.
+  try {
+    await recordBoardRating(
+      game.id,
+      game.variant,
+      game.whiteId,
+      game.blackId,
+      result,
+    );
+  } catch {
+    // Có thể chạy job reconcile sau; trạng thái ván đã được chốt an toàn.
+  }
+
+  // Thành tích là projection có thể rebuild từ games, nên lỗi projection không
+  // được làm ván đấu thất bại.
+  try {
+    await Promise.all([
+      syncPlayerAchievements(game.whiteId),
+      syncPlayerAchievements(game.blackId),
+    ]);
+  } catch {
+    // Có thể chạy lại từ job reconcile sau này.
+  }
+
   // cập nhật bản sao trong bộ nhớ để build response ngay sau finalize
   game.status = "finished";
   game.result = result;
@@ -291,7 +319,7 @@ function buildState(
 
   let scoreA: number | null = null;
   let scoreB: number | null = null;
-  if (finished && game.variant === "oanquan") {
+  if (finished && (game.variant === "oanquan" || game.variant === "dots")) {
     const end = rules.detectEnd();
     scoreA = end?.scoreA ?? null;
     scoreB = end?.scoreB ?? null;

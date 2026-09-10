@@ -17,16 +17,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, ApiError } from "@/lib/api";
+import type { BoardGameId } from "@/lib/games/registry";
 import { isFresherLiveState } from "@/lib/online/stateFreshness";
 import { playSound } from "@/lib/sounds";
 
-// Khoảng nghỉ sau khi request trước xong; không cho các GET state chồng nhau.
+// Khoảng nghỉ sau khi request trước hoàn tất. Recursive timeout bảo đảm chỉ có
+// một GET state đang bay, kể cả lúc DB/cold start chậm.
 const POLL_MS = 700;
 /** đối thủ không poll quá ngưỡng này (server đo) → coi là mất kết nối */
 const OPP_DISCONNECT_VISIBLE_MS = 6000;
 
 export type OnlineColor = "white" | "black";
-export type OnlineVariant = "chess" | "xiangqi" | "caro" | "jungle" | "oanquan";
+export type OnlineVariant = BoardGameId;
 
 export interface LiveMove {
   ply: number;
@@ -87,7 +89,9 @@ export function useOnlineGame(gameId: string | null) {
   }, [state]);
 
   const applyState = useCallback((st: LiveState) => {
-    // Bảo vệ cả polling đến sai thứ tự lẫn GET cũ về sau POST move.
+    // setInterval cũ có thể tạo nhiều request chồng nhau; response cũ về sau
+    // không được phép kéo bàn cờ lùi lại. Guard này cũng bảo vệ giao thoa giữa
+    // GET state đang bay và response POST move.
     if (!isFresherLiveState(stateRef.current, st)) return;
     stateRef.current = st;
     timesRef.current = { at: performance.now() };

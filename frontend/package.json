@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/migrations.test.ts tests/rooms.test.ts tests/room-navigation.test.ts tests/online-state-freshness.test.ts tests/uno.test.ts tests/jungle.test.ts",
+    "test": "tsx --test tests/migrations.test.ts tests/rooms.test.ts tests/room-navigation.test.ts tests/online-state-freshness.test.ts tests/game-registry.test.ts tests/auth.test.ts tests/uno.test.ts tests/jungle.test.ts tests/tienlen.test.ts tests/tienlen-engine.test.ts tests/ngua.test.ts tests/ngua-engine.test.ts tests/party-engine.test.ts tests/reversi.test.ts tests/connect4.test.ts tests/server-rules-new-games.test.ts tests/coganh.test.ts tests/covay.test.ts tests/chinese-checkers.test.ts tests/draughts.test.ts tests/dots.test.ts tests/caro-engine.test.ts",
     "test:e2e": "tsx tests/e2e/rooms-flow-cli.ts",
     "test:e2e:local": "npm run build && tsx tests/e2e/run-local.ts",
     "db:generate": "drizzle-kit generate",

@@ -7,19 +7,28 @@ import { CardsThree } from "@phosphor-icons/react/CardsThree";
 import { CastleTurret } from "@phosphor-icons/react/CastleTurret";
 import { CrownSimple } from "@phosphor-icons/react/CrownSimple";
 import { GridFour } from "@phosphor-icons/react/GridFour";
+import { Lightning } from "@phosphor-icons/react/Lightning";
 import { List } from "@phosphor-icons/react/List";
+import { Trophy } from "@phosphor-icons/react/Trophy";
+import { FlagBanner } from "@phosphor-icons/react/FlagBanner";
 import { UsersThree } from "@phosphor-icons/react/UsersThree";
+import { User } from "@phosphor-icons/react/User";
 import { X } from "@phosphor-icons/react/X";
 
 const NAV = [
-  { href: "/chess", label: "Cờ vua", also: "/play" },
-  { href: "/xiangqi", label: "Cờ tướng" },
-  { href: "/caro", label: "Caro" },
-  { href: "/jungle", label: "Cờ thú" },
-  { href: "/oanquan", label: "Ô ăn quan" },
-  { href: "/cards", label: "Game bài", icon: CardsThree },
-  { href: "/rooms", label: "Phòng chơi", icon: UsersThree },
-  { href: "/minigames", label: "Giải trí", icon: GridFour },
+  {
+    href: "/chess",
+    label: "Bàn cờ",
+    icon: CastleTurret,
+    activePrefixes: ["/chess", "/xiangqi", "/caro", "/jungle", "/oanquan", "/coganh", "/reversi", "/connect4", "/covay", "/checkers", "/play"],
+  },
+  { href: "/cards", label: "Game bài", icon: CardsThree, activePrefixes: ["/cards"] },
+  { href: "/minigames", label: "Giải trí", icon: GridFour, activePrefixes: ["/minigames"] },
+  { href: "/rooms", label: "Phòng chơi", icon: UsersThree, activePrefixes: ["/rooms", "/spectate"] },
+  { href: "/matchmaking", label: "Tìm trận", icon: Lightning, activePrefixes: ["/matchmaking"] },
+  { href: "/leaderboard", label: "Xếp hạng", icon: Trophy, activePrefixes: ["/leaderboard"] },
+  { href: "/tournaments", label: "Giải đấu", icon: FlagBanner, activePrefixes: ["/tournaments"] },
+  { href: "/account", label: "Hồ sơ", icon: User, activePrefixes: ["/account"] },
 ];
 
 export default function Header() {
@@ -31,8 +40,7 @@ export default function Header() {
   }, [pathname]);
 
   const isActive = (item: (typeof NAV)[number]) =>
-    pathname?.startsWith(item.href) ||
-    (item.also !== undefined && pathname?.startsWith(item.also));
+    item.activePrefixes.some((prefix) => pathname?.startsWith(prefix));
 
   if (pathname?.startsWith("/cards/xidach")) {
     return (
@@ -107,6 +115,14 @@ export default function Header() {
           })}
         </nav>
 
+        <Link
+          href="/rooms"
+          className="ml-auto mr-3 hidden min-h-10 items-center gap-2 rounded-[9px] border border-brass bg-brass px-4 text-sm font-bold text-ink transition hover:bg-[#e4bf6b] active:translate-y-px xl:inline-flex"
+        >
+          Mở phòng
+          <Lightning size={16} weight="bold" aria-hidden />
+        </Link>
+
         <button
           type="button"
           aria-label={menuOpen ? "Đóng menu" : "Mở menu"}
@@ -122,9 +138,7 @@ export default function Header() {
         <nav className="border-t border-line bg-ink/98 px-4 py-4 shadow-2xl xl:hidden">
           <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-2 sm:grid-cols-3">
             {NAV.map((item) => {
-              const Icon =
-                item.icon ??
-                (item.href === "/chess" ? CrownSimple : CastleTurret);
+              const Icon = item.icon ?? (item.href === "/chess" ? CrownSimple : CastleTurret);
               return (
                 <Link
                   key={item.href}

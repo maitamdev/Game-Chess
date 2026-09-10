@@ -9,6 +9,7 @@ import ChessBoard from "@/components/board/ChessBoard";
 import XiangqiBoard from "@/components/xiangqi/XiangqiBoard";
 import XqPlayerCard from "@/components/xiangqi/XqPlayerCard";
 import MoveList from "@/components/game/MoveList";
+import ArcadeReview, { type ArcadeReviewVariant } from "@/components/game/ArcadeReview";
 import PlayerCard from "@/components/game/PlayerCard";
 import Button from "@/components/ui/Button";
 import { api, API_URL, type GameDetail } from "@/lib/api";

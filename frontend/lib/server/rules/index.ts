@@ -9,6 +9,10 @@
 import { Chess } from "chess.js";
 
 import { Caro } from "@/lib/caro/rules";
+import { Connect4Game } from "@/lib/connect4/rules";
+import { DraughtsGame, DRAUGHTS_SIZE } from "@/lib/draughts/rules";
+import { DotsGame, DOTS_BOX_COLS, DOTS_BOX_ROWS } from "@/lib/dots/rules";
+import { ReversiGame } from "@/lib/reversi/rules";
 import { Jungle } from "@/lib/jungle/rules";
 import { OAnQuan } from "@/lib/oanquan/rules";
 import { Xiangqi } from "@/lib/xiangqi/rules";
@@ -493,6 +497,377 @@ class OanquanRules implements ServerRules {
   }
 }
 
+// ---------------- Reversi / Othello ----------------
+
+class ReversiRules implements ServerRules {
+  readonly variant: Variant = "reversi";
+  private game = new ReversiGame();
+  private ucis: string[] = [];
+
+  constructor(uciMoves: string[]) {
+    for (const uci of uciMoves) {
+      if (this.tryMove(uci) === null) {
+        throw new Error(`Nước Reversi không hợp lệ khi dựng lại: ${uci}`);
+      }
+    }
+  }
+
+  ply(): number {
+    return this.ucis.length;
+  }
+
+  turnColor(): Color {
+    return this.game.turn === "black" ? "white" : "black";
+  }
+
+  fen(): string {
+    return this.game.board
+      .map((row) => row.map((cell) => cell?.[0] ?? ".").join(""))
+      .join("/") + ` ${this.game.turn[0]} ${this.game.consecutivePasses}`;
+  }
+
+  tryMove(uci: string): AppliedMove | null {
+    const match = /^r([0-7])c([0-7])$/.exec(uci);
+    if (!match || this.game.isGameOver()) return null;
+    const row = Number(match[1]);
+    const col = Number(match[2]);
+    const next = this.game.play(row, col);
+    if (next === null) return null;
+
+    // Một số thế Reversi buộc bên kế tiếp bỏ lượt. Ghi nhận pass trong
+    // snapshot luật để server luôn biết đúng người được đi tiếp.
+    let settled = next;
+    while (!settled.isGameOver() && settled.legalMoves().length === 0) {
+      const passed = settled.pass();
+      if (passed === null) break;
+      settled = passed;
+    }
+    this.game = settled;
+    this.ucis.push(uci);
+    return {
+      san: `${String.fromCharCode(97 + col)}${row + 1}`,
+      uci,
+      fenAfter: this.fen(),
+      isCheck: false,
+    };
+  }
+
+  detectEnd(): GameEndInfo | null {
+    const winner = this.game.winner();
+    if (winner === null) return null;
+    return {
+      result:
+        winner === "draw"
+          ? "draw"
+          : winner === "black"
+            ? "white"
+            : "black",
+      termination: "board_filled",
+    };
+  }
+
+  hasMatingMaterial(): boolean {
+    return true;
+  }
+
+  buildPgn(
+    whiteName: string,
+    blackName: string,
+    result: string,
+    timeControl: string,
+    startedAtMs: number,
+  ): string {
+    return variantPgn(
+      [
+        ["Event", "Kỳ Đài - phòng Reversi"],
+        ["Site", "Kỳ Đài"],
+        ["Date", pgnDate(startedAtMs)],
+        ["White", whiteName],
+        ["Black", blackName],
+        ["TimeControl", timeControl],
+        ["Variant", "Reversi"],
+        ["Result", score(result)],
+      ],
+      this.ucis,
+      result,
+    );
+  }
+}
+
+// ---------------- Connect Four ----------------
+
+class Connect4Rules implements ServerRules {
+  readonly variant: Variant = "connect4";
+  private game = new Connect4Game();
+  private ucis: string[] = [];
+
+  constructor(uciMoves: string[]) {
+    for (const uci of uciMoves) {
+      if (this.tryMove(uci) === null) {
+        throw new Error(`Nước Connect Four không hợp lệ khi dựng lại: ${uci}`);
+      }
+    }
+  }
+
+  ply(): number {
+    return this.ucis.length;
+  }
+
+  turnColor(): Color {
+    return this.game.turn === "red" ? "white" : "black";
+  }
+
+  fen(): string {
+    return this.game.board
+      .map((row) => row.map((cell) => (cell === "red" ? "r" : cell === "yellow" ? "y" : ".")).join(""))
+      .join("/") + ` ${this.game.turn[0]}`;
+  }
+
+  tryMove(uci: string): AppliedMove | null {
+    const match = /^c([0-6])$/.exec(uci);
+    if (!match || this.game.winner() !== null) return null;
+    const column = Number(match[1]);
+    const next = this.game.play(column);
+    if (next === null) return null;
+    this.game = next;
+    this.ucis.push(uci);
+    return {
+      san: `C${column + 1}`,
+      uci,
+      fenAfter: this.fen(),
+      isCheck: false,
+    };
+  }
+
+  detectEnd(): GameEndInfo | null {
+    const winner = this.game.winner();
+    if (winner === null) return null;
+    return {
+      result: winner === "red" ? "white" : winner === "yellow" ? "black" : "draw",
+      termination: winner === "draw" ? "board_full" : "four_in_a_row",
+    };
+  }
+
+  hasMatingMaterial(): boolean {
+    return true;
+  }
+
+  buildPgn(
+    whiteName: string,
+    blackName: string,
+    result: string,
+    timeControl: string,
+    startedAtMs: number,
+  ): string {
+    return variantPgn(
+      [
+        ["Event", "Kỳ Đài - phòng Connect Four"],
+        ["Site", "Kỳ Đài"],
+        ["Date", pgnDate(startedAtMs)],
+        ["White", whiteName],
+        ["Black", blackName],
+        ["TimeControl", timeControl],
+        ["Variant", "Connect Four"],
+        ["Result", score(result)],
+      ],
+      this.ucis,
+      result,
+    );
+  }
+}
+
+// ---------------- Cờ Đam ----------------
+
+class DraughtsRules implements ServerRules {
+  readonly variant: Variant = "draughts";
+  private game = new DraughtsGame();
+  private ucis: string[] = [];
+
+  constructor(uciMoves: string[]) {
+    for (const uci of uciMoves) {
+      if (this.tryMove(uci) === null) {
+        throw new Error(`Nước Cờ Đam không hợp lệ khi dựng lại: ${uci}`);
+      }
+    }
+  }
+
+  ply(): number {
+    return this.game.moveCount;
+  }
+
+  turnColor(): Color {
+    return this.game.turn === "red" ? "white" : "black";
+  }
+
+  fen(): string {
+    const board = this.game.board
+      .map((row) =>
+        row
+          .map((piece) =>
+            piece === null
+              ? "."
+              : piece.color === "red"
+                ? piece.king ? "R" : "r"
+                : piece.king ? "B" : "b",
+          )
+          .join(""),
+      )
+      .join("/");
+    const pending = this.game.pendingCapture
+      ? `${this.game.pendingCapture.row}${this.game.pendingCapture.col}`
+      : "-";
+    return `${board} ${this.game.turn[0]} ${pending}`;
+  }
+
+  tryMove(uci: string): AppliedMove | null {
+    const match = /^d([0-7])([0-7])([0-7])([0-7])$/.exec(uci);
+    if (!match || this.game.winner() !== null) return null;
+    const from = { row: Number(match[1]), col: Number(match[2]) };
+    const to = { row: Number(match[3]), col: Number(match[4]) };
+    const move = this.game.legalMoves().find(
+      (candidate) =>
+        candidate.from.row === from.row &&
+        candidate.from.col === from.col &&
+        candidate.to.row === to.row &&
+        candidate.to.col === to.col,
+    );
+    if (!move) return null;
+    const next = this.game.play(move);
+    if (!next) return null;
+    this.game = next;
+    this.ucis.push(uci);
+    return {
+      san: `${match[1]}${match[2]}-${match[3]}${match[4]}${move.jumped ? "x" : ""}`,
+      uci,
+      fenAfter: this.fen(),
+      isCheck: false,
+    };
+  }
+
+  detectEnd(): GameEndInfo | null {
+    const winner = this.game.winner();
+    if (winner === null) return null;
+    return {
+      result: winner === "red" ? "white" : "black",
+      termination: "no_legal_moves",
+    };
+  }
+
+  hasMatingMaterial(color: Color): boolean {
+    const wanted = color === "white" ? "red" : "black";
+    return this.game.board.flat().some((piece) => piece?.color === wanted);
+  }
+
+  buildPgn(
+    whiteName: string,
+    blackName: string,
+    result: string,
+    timeControl: string,
+    startedAtMs: number,
+  ): string {
+    return variantPgn(
+      [
+        ["Event", "Kỳ Đài - phòng Cờ Đam"],
+        ["Site", "Kỳ Đài"],
+        ["Date", pgnDate(startedAtMs)],
+        ["Red", whiteName],
+        ["Black", blackName],
+        ["TimeControl", timeControl],
+        ["Variant", `Cờ Đam ${DRAUGHTS_SIZE}x${DRAUGHTS_SIZE}`],
+        ["Result", score(result)],
+      ],
+      this.ucis,
+      result,
+    );
+  }
+}
+
+// ---------------- Dots & Boxes ----------------
+
+class DotsRules implements ServerRules {
+  readonly variant: Variant = "dots";
+  private game = new DotsGame();
+  private ucis: string[] = [];
+
+  constructor(uciMoves: string[]) {
+    for (const uci of uciMoves) {
+      if (this.tryMove(uci) === null) {
+        throw new Error(`Nước Dots không hợp lệ khi dựng lại: ${uci}`);
+      }
+    }
+  }
+
+  ply(): number {
+    return this.game.moveCount;
+  }
+
+  turnColor(): Color {
+    return this.game.turn === "red" ? "white" : "black";
+  }
+
+  fen(): string {
+    const horizontal = this.game.horizontal.map((row) => row.map((edge) => (edge ? "1" : "0")).join(""));
+    const vertical = this.game.vertical.map((row) => row.map((edge) => (edge ? "1" : "0")).join(""));
+    const boxes = this.game.boxes.map((row) => row.map((box) => box === null ? "." : box[0]).join(""));
+    return `${horizontal.join("/")} ${vertical.join("/")} ${boxes.join("/")} ${this.game.turn[0]}`;
+  }
+
+  tryMove(uci: string): AppliedMove | null {
+    const match = /^([hv])([0-4])([0-4])$/.exec(uci);
+    if (!match || this.game.winner() !== null) return null;
+    const edge = { orientation: match[1] as "h" | "v", row: Number(match[2]), col: Number(match[3]) };
+    const next = this.game.play(edge);
+    if (!next) return null;
+    this.game = next;
+    this.ucis.push(uci);
+    return {
+      san: `${edge.orientation}${edge.row}${edge.col}`,
+      uci,
+      fenAfter: this.fen(),
+      isCheck: false,
+    };
+  }
+
+  detectEnd(): GameEndInfo | null {
+    const winner = this.game.winner();
+    if (winner === null) return null;
+    const scoreNow = this.game.score();
+    return {
+      result: winner === "draw" ? "draw" : winner === "red" ? "white" : "black",
+      termination: "board_full",
+      scoreA: scoreNow.red,
+      scoreB: scoreNow.blue,
+    };
+  }
+
+  hasMatingMaterial(): boolean {
+    return true;
+  }
+
+  buildPgn(
+    whiteName: string,
+    blackName: string,
+    result: string,
+    timeControl: string,
+    startedAtMs: number,
+  ): string {
+    return variantPgn(
+      [
+        ["Event", "Kỳ Đài - phòng Dots & Boxes"],
+        ["Site", "Kỳ Đài"],
+        ["Date", pgnDate(startedAtMs)],
+        ["Red", whiteName],
+        ["Blue", blackName],
+        ["TimeControl", timeControl],
+        ["Variant", `Dots ${DOTS_BOX_ROWS}x${DOTS_BOX_COLS}`],
+        ["Result", score(result)],
+      ],
+      this.ucis,
+      result,
+    );
+  }
+}
+
 // ---------------- factory ----------------
 
 export function createRules(variant: Variant, uciMoves: string[]): ServerRules {
@@ -507,6 +882,14 @@ export function createRules(variant: Variant, uciMoves: string[]): ServerRules {
       return new JungleRules(uciMoves);
     case "oanquan":
       return new OanquanRules(uciMoves);
+    case "reversi":
+      return new ReversiRules(uciMoves);
+    case "connect4":
+      return new Connect4Rules(uciMoves);
+    case "draughts":
+      return new DraughtsRules(uciMoves);
+    case "dots":
+      return new DotsRules(uciMoves);
   }
 }
 

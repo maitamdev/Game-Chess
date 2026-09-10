@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowClockwise } from "@phosphor-icons/react/ArrowClockwise";
 import { HandPalm } from "@phosphor-icons/react/HandPalm";
@@ -305,13 +306,12 @@ export default function XiDachPage() {
                     initial={reduceMotion ? false : { opacity: 0, y: 7 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
-                    className={`xi-dach-status-plaque ${
-                      round.status === "won"
-                        ? "xi-dach-status-won"
-                        : round.status === "lost"
-                          ? "xi-dach-status-lost"
-                          : ""
-                    }`}
+                    className={`xi-dach-status-plaque ${round.status === "won"
+                      ? "xi-dach-status-won"
+                      : round.status === "lost"
+                        ? "xi-dach-status-lost"
+                        : ""
+                      }`}
                   >
                     {round.message}
                   </motion.div>
@@ -346,7 +346,11 @@ export default function XiDachPage() {
             </div>
           </section>
 
-          <div className="xi-dach-cupholder xi-dach-cupholder-left" aria-hidden />
+        <div className="mt-3 flex justify-center">
+          <Link href="/cards/xidach/rooms" className="text-sm font-semibold text-brass transition hover:text-parchment">Tạo phòng Xì Dách online →</Link>
+        </div>
+
+        <div className="xi-dach-cupholder xi-dach-cupholder-left" aria-hidden />
           <div className="xi-dach-cupholder xi-dach-cupholder-right" aria-hidden />
 
           <div className="xi-dach-actions">

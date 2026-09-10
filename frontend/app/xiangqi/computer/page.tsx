@@ -8,6 +8,7 @@ import GameControls from "@/components/game/GameControls";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import SoundToggle from "@/components/ui/SoundToggle";
+import AmbientMusicToggle from "@/components/ui/AmbientMusicToggle";
 import { useXiangqiStore } from "@/stores/xiangqiStore";
 import { trackXqPieces } from "@/lib/xiangqi/tracker";
 import {
@@ -333,7 +334,10 @@ export default function XiangqiComputerPage() {
                 useXiangqiStore.setState({ status: "idle" });
               }}
             />
-            <SoundToggle />
+            <div className="flex items-center gap-1">
+              <AmbientMusicToggle />
+              <SoundToggle />
+            </div>
           </div>
           <MoveList
             moves={moves}

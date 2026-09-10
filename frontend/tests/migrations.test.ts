@@ -31,16 +31,34 @@ test("migration Supabase tạo đúng schema và chặn dữ liệu phòng sai",
     );
     assert.deepEqual(
       tables.rows.map((row) => row.table_name),
-      ["game_rooms", "games", "moves", "players", "room_players"],
+      [
+        "accounts",
+        "achievement_definitions",
+        "game_rooms",
+        "games",
+        "matchmaking_queue",
+        "moves",
+        "player_achievements",
+        "player_reports",
+        "players",
+        "rating_history",
+        "ratings",
+        "room_messages",
+        "room_players",
+        "seasons",
+        "tournament_matches",
+        "tournament_participants",
+        "tournaments",
+      ],
     );
 
     const rls = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity
        from pg_class
-       where relname in ('players', 'game_rooms', 'room_players', 'games', 'moves')
+       where relname in ('players', 'game_rooms', 'room_players', 'games', 'moves', 'accounts', 'ratings', 'rating_history', 'matchmaking_queue', 'room_messages', 'seasons', 'tournaments', 'tournament_participants', 'tournament_matches', 'achievement_definitions', 'player_achievements', 'player_reports')
        order by relname`,
     );
-    assert.equal(rls.rows.length, 5);
+    assert.equal(rls.rows.length, 17);
     assert.equal(rls.rows.every((row) => row.relrowsecurity), true);
 
     await db.exec(`

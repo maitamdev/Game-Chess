@@ -9,6 +9,7 @@ import MoveList from "@/components/game/MoveList";
 import GameOverModal from "@/components/game/GameOverModal";
 import Button from "@/components/ui/Button";
 import SoundToggle from "@/components/ui/SoundToggle";
+import AmbientMusicToggle from "@/components/ui/AmbientMusicToggle";
 import { useOnlineGame } from "@/lib/online/useOnlineGame";
 import { playSound } from "@/lib/sounds";
 import { trackPieces } from "@/lib/pieceTracker";
@@ -360,7 +361,10 @@ export default function OnlineGamePage() {
                 </Button>
               )}
             </div>
-            <SoundToggle />
+            <div className="flex items-center gap-1">
+              <AmbientMusicToggle />
+              <SoundToggle />
+            </div>
           </div>
           <MoveList
             moves={verboseMoves}

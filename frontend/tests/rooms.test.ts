@@ -25,7 +25,22 @@ test("tên phòng quá ngắn dùng tên chủ phòng làm phương án dự ph�
 });
 
 test("danh sách game phòng chỉ nhận các game được hỗ trợ", () => {
-  for (const game of ["chess", "xiangqi", "caro", "jungle", "oanquan", "uno"]) {
+  for (const game of [
+    "chess",
+    "xiangqi",
+    "caro",
+    "jungle",
+    "oanquan",
+    "reversi",
+    "connect4",
+    "draughts",
+    "dots",
+    "uno",
+    "tienlen",
+    "ngua",
+    "xidach",
+    "baicao",
+  ]) {
     assert.equal(isRoomGameType(game), true);
   }
   assert.equal(isRoomGameType("blackjack"), false);

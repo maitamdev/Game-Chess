@@ -1,10 +1,12 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr/ArrowRight";
 import { CardsThree } from "@phosphor-icons/react/dist/ssr/CardsThree";
 import { Club } from "@phosphor-icons/react/dist/ssr/Club";
 import { Spade } from "@phosphor-icons/react/dist/ssr/Spade";
 import { UsersThree } from "@phosphor-icons/react/dist/ssr/UsersThree";
+import { Crown } from "@phosphor-icons/react/dist/ssr/Crown";
 
 export const metadata: Metadata = {
   title: "Game Bài | Kỳ Đài",
@@ -36,21 +38,31 @@ const games = [
     Icon: Club,
     featured: false,
   },
+  {
+    href: "/cards/tienlen",
+    title: "Tiến Lên Miền Nam",
+    description: "Bàn 4 người với luật chặt heo, đôi thông, tới trắng và đối thủ máy.",
+    note: "Local hoặc tạo phòng online",
+    Icon: Crown,
+    featured: false,
+  },
 ];
 
 export default function CardsPage() {
   return (
     <div className="app-shell py-10 sm:py-14">
-      <header className="max-w-2xl">
-        <span className="grid h-12 w-12 place-items-center rounded-[12px] border border-brass/35 bg-brass/10 text-brass">
-          <CardsThree size={27} weight="duotone" aria-hidden />
-        </span>
-        <h1 className="mt-6 text-4xl font-extrabold tracking-[-0.045em] sm:text-5xl">
-          Bàn bài Kỳ Đài
-        </h1>
-        <p className="mt-4 max-w-xl leading-7 text-muted">
-          Chọn một bàn, mời bạn bằng mã phòng hoặc chơi nhanh với máy.
-        </p>
+      <header className="grid overflow-hidden rounded-[18px] border border-line bg-slate lg:grid-cols-[minmax(0,.78fr)_minmax(320px,1.22fr)]">
+        <div className="p-7 sm:p-9 lg:p-12">
+          <span className="grid h-12 w-12 place-items-center rounded-[12px] border border-brass/35 bg-brass/10 text-brass">
+            <CardsThree size={27} weight="duotone" aria-hidden />
+          </span>
+          <h1 className="mt-6 text-4xl font-extrabold tracking-[-0.045em] sm:text-5xl">Bàn bài Kỳ Đài</h1>
+          <p className="mt-4 max-w-xl leading-7 text-muted">Chọn một bàn, mời bạn bằng mã phòng hoặc chơi nhanh với máy.</p>
+        </div>
+        <div className="relative min-h-[260px] border-t border-line lg:border-l lg:border-t-0">
+          <Image src="/images/branding/cards-feature.webp" alt="Bộ bài truyền thống trên mặt bàn nỉ xanh" fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover object-center" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,28,35,.9),rgba(16,28,35,.12)_70%,rgba(16,28,35,.08))]" />
+        </div>
       </header>
 
       <div className="mt-10 grid gap-4 md:grid-cols-2">

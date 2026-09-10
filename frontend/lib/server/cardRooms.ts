@@ -1,10 +1,16 @@
 export {
   actInCardRoom,
+  actInNguaRoom,
+  actInTienLenRoom,
   createCardRoom,
   getCardRoom,
   joinCardRoom,
   leaveCardRoom,
   startCardRoom,
+  rematchCardRoom,
+  startNguaRoom,
+  startTienLenRoom,
   type RoomDto as CardRoomDto,
   type RoomPlayerDto as CardRoomPlayerDto,
+  type CardRoomAction,
 } from "./rooms";

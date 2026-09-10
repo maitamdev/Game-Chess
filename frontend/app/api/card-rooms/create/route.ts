@@ -6,6 +6,9 @@ import { ApiError, handle } from "@/lib/server/errors";
 
 const Input = z.object({
   max_players: z.number().int().min(2).max(4),
+  game_type: z
+    .enum(["uno", "tienlen", "ngua", "xidach", "baicao"])
+    .default("uno"),
   title: z.string().trim().max(48).optional(),
   is_public: z.boolean().optional(),
 });
@@ -16,6 +19,7 @@ export const POST = handle(async (request: NextRequest) => {
   if (!parsed.success) throw new ApiError(422, "VALIDATION", "Dữ liệu không hợp lệ");
   return NextResponse.json(
     await createCardRoom(user, parsed.data.max_players, {
+      gameType: parsed.data.game_type,
       title: parsed.data.title,
       isPublic: parsed.data.is_public,
     }),

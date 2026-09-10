@@ -14,6 +14,10 @@ import {
   roomDestination,
   type RoomGameType,
 } from "@/lib/rooms/navigation";
+import {
+  GAME_DEFINITIONS,
+  ROOM_GAME_TYPES,
+} from "@/lib/games/registry";
 
 export type { RoomGameType } from "@/lib/rooms/navigation";
 
@@ -52,17 +56,13 @@ type PublicRoom = Omit<
   "is_public" | "is_host" | "me_seat" | "players" | "game_id" | "version"
 >;
 
-const GAME_LABELS: Record<RoomGameType, string> = {
-  chess: "Cờ vua",
-  xiangqi: "Cờ tướng",
-  caro: "Caro",
-  jungle: "Cờ thú",
-  oanquan: "Ô ăn quan",
-  uno: "UNO",
-};
+const GAME_LABELS: Record<RoomGameType, string> = Object.fromEntries(
+  ROOM_GAME_TYPES.map((game) => [game, GAME_DEFINITIONS[game].title]),
+) as Record<RoomGameType, string>;
 
-const GAME_TYPES = Object.keys(GAME_LABELS) as RoomGameType[];
+const GAME_TYPES = [...ROOM_GAME_TYPES];
 const TIME_CONTROLS = ["3+2", "5+0", "10+0", "15+10"];
+const VARIABLE_PLAYER_GAMES = ["uno", "xidach", "baicao"] as const;
 
 export default function RoomLobby({
   initialGame = "chess",
@@ -177,8 +177,18 @@ export default function RoomLobby({
       const room = await api<Room>("/api/rooms/create", {
         body: {
           game_type: gameType,
-          time_control: gameType === "uno" ? undefined : timeControl,
-          max_players: gameType === "uno" ? maxPlayers : 2,
+          time_control:
+            VARIABLE_PLAYER_GAMES.includes(gameType as (typeof VARIABLE_PLAYER_GAMES)[number]) ||
+            gameType === "tienlen" ||
+            gameType === "ngua"
+              ? undefined
+              : timeControl,
+          max_players:
+            gameType === "uno" || gameType === "xidach" || gameType === "baicao"
+              ? maxPlayers
+              : gameType === "tienlen" || gameType === "ngua"
+                ? 4
+                : 2,
           title,
           is_public: isPublic,
         },
@@ -393,7 +403,7 @@ export default function RoomLobby({
               className="mt-2 min-h-11 w-full rounded-[8px] border border-line bg-ink px-4 text-sm text-parchment outline-none transition placeholder:text-muted/45 focus:border-brass"
             />
 
-            {gameType === "uno" ? (
+            {gameType === "uno" || gameType === "xidach" || gameType === "baicao" ? (
               <div className="mt-5">
                 <span className="text-sm font-semibold text-parchment">
                   Số người
@@ -414,6 +424,17 @@ export default function RoomLobby({
                     </button>
                   ))}
                 </div>
+              </div>
+            ) : gameType === "tienlen" || gameType === "ngua" ? (
+              <div className="mt-5 rounded-[8px] border border-brass/25 bg-brass/5 px-4 py-3">
+                <p className="text-sm font-semibold text-parchment">
+                  Bàn 4 người
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  {gameType === "tienlen"
+                    ? "Tiến Lên online dùng bộ bài 52 lá và chỉ bắt đầu khi đủ 4 ghế."
+                    : "Cá Ngựa online dùng xúc xắc server và chỉ bắt đầu khi đủ 4 ghế."}
+                </p>
               </div>
             ) : (
               <div className="mt-5">

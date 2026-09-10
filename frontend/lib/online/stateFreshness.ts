@@ -4,7 +4,10 @@ export interface LiveStateRevision {
   status: "active" | "finished";
 }
 
-/** Chặn response polling cũ về trễ ghi đè snapshot mới hơn. */
+/**
+ * Chặn response polling cũ về trễ ghi đè snapshot mới hơn.
+ * Trạng thái kết thúc là một chiều và số ply của cùng một ván không bao giờ giảm.
+ */
 export function isFresherLiveState(
   current: LiveStateRevision | null,
   incoming: LiveStateRevision,

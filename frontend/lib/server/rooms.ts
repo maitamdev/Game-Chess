@@ -16,6 +16,39 @@ import {
   type UnoGameState,
 } from "@/lib/cards/unoEngine";
 import {
+  applyTienLenAction,
+  createTienLenGame,
+  tienLenActionMessage,
+  tienLenPublicView,
+  type TienLenAction,
+  type TienLenState,
+} from "@/lib/cards/tienlenEngine";
+import {
+  applyNguaAction,
+  createNguaGame,
+  nguaActionMessage,
+  nguaPublicView,
+  type NguaAction,
+  type NguaState,
+} from "@/lib/ngua/engine";
+import {
+  applyBaiCaoAction,
+  applyXiDachAction,
+  baiCaoPublicView,
+  createBaiCaoGame,
+  createXiDachGame,
+  partyActionMessage,
+  xiDachPublicView,
+  type BaiCaoAction,
+  type BaiCaoState,
+  type XiDachAction,
+  type XiDachState,
+} from "@/lib/cards/partyEngine";
+import {
+  ROOM_GAME_TYPES as REGISTRY_ROOM_GAME_TYPES,
+  type RoomGameType as RegistryRoomGameType,
+} from "@/lib/games/registry";
+import {
   cardRoomPlayers,
   cardRooms,
   db,
@@ -34,9 +67,8 @@ import {
 
 const ROOM_LIFETIME_MS = 6 * 60 * 60_000;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const BOARD_GAMES = ["chess", "xiangqi", "caro", "jungle", "oanquan"] as const;
 
-export type RoomGameType = Variant | "uno";
+export type RoomGameType = RegistryRoomGameType;
 
 export interface RoomPlayerDto {
   id: string;
@@ -61,7 +93,12 @@ export interface RoomDto {
   game_id: string | null;
   version: number;
   updated_at: number;
-  game?: ReturnType<typeof unoPublicView>;
+  game?:
+    | ReturnType<typeof unoPublicView>
+    | ReturnType<typeof tienLenPublicView>
+    | ReturnType<typeof nguaPublicView>
+    | ReturnType<typeof xiDachPublicView>
+    | ReturnType<typeof baiCaoPublicView>;
 }
 
 export interface PublicRoomDto {
@@ -85,7 +122,14 @@ interface CreateRoomOptions {
 }
 
 export function isRoomGameType(value: string): value is RoomGameType {
-  return value === "uno" || isVariant(value);
+  return (
+    value === "uno" ||
+    value === "tienlen" ||
+    value === "ngua" ||
+    value === "xidach" ||
+    value === "baicao" ||
+    isVariant(value)
+  );
 }
 
 export function normalizeRoomCode(code: string): string {
@@ -186,6 +230,18 @@ async function roomDto(room: CardRoomRow, player: PlayerRow): Promise<RoomDto> {
   if (room.gameType === "uno" && room.stateJson) {
     dto.game = unoPublicView(room.stateJson as UnoGameState, me.seat);
   }
+  if (room.gameType === "tienlen" && room.stateJson) {
+    dto.game = tienLenPublicView(room.stateJson as TienLenState, me.seat);
+  }
+  if (room.gameType === "ngua" && room.stateJson) {
+    dto.game = nguaPublicView(room.stateJson as NguaState, me.seat);
+  }
+  if (room.gameType === "xidach" && room.stateJson) {
+    dto.game = xiDachPublicView(room.stateJson as XiDachState, me.seat);
+  }
+  if (room.gameType === "baicao" && room.stateJson) {
+    dto.game = baiCaoPublicView(room.stateJson as BaiCaoState, me.seat);
+  }
   return dto;
 }
 
@@ -257,7 +313,12 @@ export async function createGameRoom(
     throw new ApiError(422, "INVALID_GAME", "Game không được hỗ trợ");
   }
   const isUno = options.gameType === "uno";
-  const maxPlayers = isUno ? options.maxPlayers : 2;
+  const isTienLen = options.gameType === "tienlen";
+  const isNgua = options.gameType === "ngua";
+  const isXiDach = options.gameType === "xidach";
+  const isBaiCao = options.gameType === "baicao";
+  const isPartyCard = isXiDach || isBaiCao;
+  const maxPlayers = isUno || isTienLen || isNgua || isPartyCard ? options.maxPlayers : 2;
   if (isUno && ![2, 3, 4].includes(maxPlayers)) {
     throw new ApiError(
       422,
@@ -265,9 +326,29 @@ export async function createGameRoom(
       "UNO chỉ hỗ trợ 2, 3 hoặc 4 người",
     );
   }
-  const timeControl = isUno ? null : (options.timeControl ?? "10+0");
+  if (isTienLen && maxPlayers !== 4) {
+    throw new ApiError(
+      422,
+      "INVALID_PLAYER_COUNT",
+      "Tiến Lên online hiện cần đúng 4 người",
+    );
+  }
+  if (isNgua && maxPlayers !== 4) {
+    throw new ApiError(
+      422,
+      "INVALID_PLAYER_COUNT",
+      "Cá Ngựa online hiện cần đúng 4 người",
+    );
+  }
+  if (isPartyCard && (maxPlayers < 2 || maxPlayers > 4)) {
+    throw new ApiError(422, "INVALID_PLAYER_COUNT", "Game bài online cần từ 2 đến 4 người");
+  }
+  const timeControl = isUno || isTienLen || isNgua || isPartyCard ? null : (options.timeControl ?? "10+0");
   if (
     !isUno &&
+    !isTienLen &&
+    !isNgua &&
+    !isPartyCard &&
     !(VALID_TIME_CONTROLS as readonly string[]).includes(timeControl ?? "")
   ) {
     throw new ApiError(422, "INVALID_TIME_CONTROL", "Thời gian không hợp lệ");
@@ -387,7 +468,14 @@ export async function joinGameRoom(
     });
 
     const playerCount = seats.length + 1;
-    if (room.gameType !== "uno" && playerCount === 2) {
+    if (
+      room.gameType !== "uno" &&
+      room.gameType !== "tienlen" &&
+      room.gameType !== "ngua" &&
+      room.gameType !== "xidach" &&
+      room.gameType !== "baicao" &&
+      playerCount === 2
+    ) {
       const participantIds = [...seats.map((item) => item.userId), player.id];
       const [whiteId, blackId] =
         Math.random() < 0.5
@@ -458,8 +546,20 @@ export async function leaveRoom(
 ): Promise<void> {
   const room = await roomByCode(codeRaw);
   if (!room) return;
-  if (room.hostId === player.id || room.status !== "waiting") {
+  if (room.status === "waiting" && room.hostId === player.id) {
     await db.delete(cardRooms).where(eq(cardRooms.id, room.id));
+    return;
+  }
+  if (room.status !== "waiting") {
+    const now = Date.now();
+    await db
+      .update(cardRooms)
+      .set({
+        status: "finished",
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
     return;
   }
   await db
@@ -595,6 +695,348 @@ export async function actInUnoRoom(
   return roomDto(room, player);
 }
 
+export async function startTienLenRoom(
+  player: PlayerRow,
+  codeRaw: string,
+): Promise<RoomDto> {
+  const code = normalizeRoomCode(codeRaw);
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select()
+      .from(cardRooms)
+      .where(eq(cardRooms.code, code))
+      .limit(1)
+      .for("update");
+    const room = rows[0];
+    if (!room) {
+      throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+    }
+    if (room.gameType !== "tienlen") {
+      throw new ApiError(409, "WRONG_GAME", "Phòng này không phải Tiến Lên");
+    }
+    if (room.hostId !== player.id) {
+      throw new ApiError(403, "HOST_ONLY", "Chỉ chủ phòng được bắt đầu");
+    }
+    if (room.status !== "waiting") return;
+
+    const seats = await tx
+      .select()
+      .from(cardRoomPlayers)
+      .where(eq(cardRoomPlayers.roomId, room.id))
+      .orderBy(asc(cardRoomPlayers.seat));
+    if (seats.length !== 4) {
+      throw new ApiError(409, "NEED_PLAYERS", "Tiến Lên cần đủ 4 người");
+    }
+    const now = Date.now();
+    await tx
+      .update(cardRooms)
+      .set({
+        status: "playing",
+        stateJson: createTienLenGame(seats.length),
+        version: room.version + 1,
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
+  });
+
+  const room = await roomByCode(code);
+  if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+  return roomDto(room, player);
+}
+
+export async function actInTienLenRoom(
+  player: PlayerRow,
+  codeRaw: string,
+  action: TienLenAction,
+): Promise<RoomDto> {
+  const roomCode = normalizeRoomCode(codeRaw);
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select()
+      .from(cardRooms)
+      .where(eq(cardRooms.code, roomCode))
+      .limit(1)
+      .for("update");
+    const room = rows[0];
+    if (
+      !room ||
+      room.gameType !== "tienlen" ||
+      room.status !== "playing" ||
+      !room.stateJson
+    ) {
+      throw new ApiError(409, "ROOM_NOT_PLAYING", "Ván bài chưa bắt đầu");
+    }
+    const seats = await tx
+      .select()
+      .from(cardRoomPlayers)
+      .where(
+        and(
+          eq(cardRoomPlayers.roomId, room.id),
+          eq(cardRoomPlayers.userId, player.id),
+        ),
+      )
+      .limit(1);
+    const seat = seats[0];
+    if (!seat) {
+      throw new ApiError(403, "NOT_IN_ROOM", "Bạn không ở trong phòng này");
+    }
+
+    let next: TienLenState;
+    try {
+      next = applyTienLenAction(
+        room.stateJson as TienLenState,
+        seat.seat,
+        action,
+      );
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "INVALID_ACTION";
+      throw new ApiError(409, code, tienLenActionMessage(code));
+    }
+
+    const now = Date.now();
+    await tx
+      .update(cardRooms)
+      .set({
+        stateJson: next,
+        status: next.winnerSeat === null ? "playing" : "finished",
+        version: room.version + 1,
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
+  });
+
+  const room = await roomByCode(roomCode);
+  if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+  return roomDto(room, player);
+}
+
+export async function startNguaRoom(
+  player: PlayerRow,
+  codeRaw: string,
+): Promise<RoomDto> {
+  const code = normalizeRoomCode(codeRaw);
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select()
+      .from(cardRooms)
+      .where(eq(cardRooms.code, code))
+      .limit(1)
+      .for("update");
+    const room = rows[0];
+    if (!room) {
+      throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+    }
+    if (room.gameType !== "ngua") {
+      throw new ApiError(409, "WRONG_GAME", "Phòng này không phải Cá Ngựa");
+    }
+    if (room.hostId !== player.id) {
+      throw new ApiError(403, "HOST_ONLY", "Chỉ chủ phòng được bắt đầu");
+    }
+    if (room.status !== "waiting") return;
+
+    const seats = await tx
+      .select()
+      .from(cardRoomPlayers)
+      .where(eq(cardRoomPlayers.roomId, room.id))
+      .orderBy(asc(cardRoomPlayers.seat));
+    if (seats.length !== 4) {
+      throw new ApiError(409, "NEED_PLAYERS", "Cá Ngựa cần đủ 4 người");
+    }
+    const now = Date.now();
+    await tx
+      .update(cardRooms)
+      .set({
+        status: "playing",
+        stateJson: createNguaGame(),
+        version: room.version + 1,
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
+  });
+
+  const room = await roomByCode(code);
+  if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+  return roomDto(room, player);
+}
+
+export async function actInNguaRoom(
+  player: PlayerRow,
+  codeRaw: string,
+  action: NguaAction,
+): Promise<RoomDto> {
+  const roomCode = normalizeRoomCode(codeRaw);
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select()
+      .from(cardRooms)
+      .where(eq(cardRooms.code, roomCode))
+      .limit(1)
+      .for("update");
+    const room = rows[0];
+    if (
+      !room ||
+      room.gameType !== "ngua" ||
+      room.status !== "playing" ||
+      !room.stateJson
+    ) {
+      throw new ApiError(409, "ROOM_NOT_PLAYING", "Ván chơi chưa bắt đầu");
+    }
+    const seats = await tx
+      .select()
+      .from(cardRoomPlayers)
+      .where(
+        and(
+          eq(cardRoomPlayers.roomId, room.id),
+          eq(cardRoomPlayers.userId, player.id),
+        ),
+      )
+      .limit(1);
+    const seat = seats[0];
+    if (!seat) {
+      throw new ApiError(403, "NOT_IN_ROOM", "Bạn không ở trong phòng này");
+    }
+
+    let next: NguaState;
+    try {
+      next = applyNguaAction(room.stateJson as NguaState, seat.seat, action);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "INVALID_ACTION";
+      throw new ApiError(409, code, nguaActionMessage(code));
+    }
+
+    const now = Date.now();
+    await tx
+      .update(cardRooms)
+      .set({
+        stateJson: next,
+        status: next.winner === null ? "playing" : "finished",
+        version: room.version + 1,
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
+  });
+
+  const room = await roomByCode(roomCode);
+  if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+  return roomDto(room, player);
+}
+
+export async function startPartyCardRoom(
+  player: PlayerRow,
+  codeRaw: string,
+): Promise<RoomDto> {
+  const code = normalizeRoomCode(codeRaw);
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select()
+      .from(cardRooms)
+      .where(eq(cardRooms.code, code))
+      .limit(1)
+      .for("update");
+    const room = rows[0];
+    if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+    if (room.gameType !== "xidach" && room.gameType !== "baicao") {
+      throw new ApiError(409, "WRONG_GAME", "Phòng này không phải game bài nhiều người");
+    }
+    if (room.hostId !== player.id) {
+      throw new ApiError(403, "HOST_ONLY", "Chỉ chủ phòng được bắt đầu");
+    }
+    if (room.status !== "waiting") return;
+    const seats = await tx
+      .select()
+      .from(cardRoomPlayers)
+      .where(eq(cardRoomPlayers.roomId, room.id))
+      .orderBy(asc(cardRoomPlayers.seat));
+    if (seats.length < 2) {
+      throw new ApiError(409, "NEED_PLAYERS", "Cần ít nhất 2 người để bắt đầu");
+    }
+    const state =
+      room.gameType === "xidach"
+        ? createXiDachGame(seats.length)
+        : createBaiCaoGame(seats.length);
+    const now = Date.now();
+    await tx
+      .update(cardRooms)
+      .set({
+        status: state.phase === "finished" ? "finished" : "playing",
+        stateJson: state,
+        version: room.version + 1,
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
+  });
+  const room = await roomByCode(code);
+  if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+  return roomDto(room, player);
+}
+
+export async function actInPartyCardRoom(
+  player: PlayerRow,
+  codeRaw: string,
+  action: XiDachAction | BaiCaoAction,
+): Promise<RoomDto> {
+  const roomCode = normalizeRoomCode(codeRaw);
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select()
+      .from(cardRooms)
+      .where(eq(cardRooms.code, roomCode))
+      .limit(1)
+      .for("update");
+    const room = rows[0];
+    if (
+      !room ||
+      (room.gameType !== "xidach" && room.gameType !== "baicao") ||
+      room.status !== "playing" ||
+      !room.stateJson
+    ) {
+      throw new ApiError(409, "ROOM_NOT_PLAYING", "Ván bài chưa bắt đầu");
+    }
+    const seats = await tx
+      .select()
+      .from(cardRoomPlayers)
+      .where(
+        and(
+          eq(cardRoomPlayers.roomId, room.id),
+          eq(cardRoomPlayers.userId, player.id),
+        ),
+      )
+      .limit(1);
+    const seat = seats[0];
+    if (!seat) throw new ApiError(403, "NOT_IN_ROOM", "Bạn không ở trong phòng này");
+    let next: XiDachState | BaiCaoState;
+    try {
+      next =
+        room.gameType === "xidach"
+          ? applyXiDachAction(room.stateJson as XiDachState, seat.seat, action as XiDachAction)
+          : applyBaiCaoAction(room.stateJson as BaiCaoState, seat.seat, action as BaiCaoAction);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "INVALID_ACTION";
+      throw new ApiError(409, code, partyActionMessage(code));
+    }
+    const finished = next.phase === "finished";
+    const now = Date.now();
+    await tx
+      .update(cardRooms)
+      .set({
+        stateJson: next,
+        status: finished ? "finished" : "playing",
+        version: room.version + 1,
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
+  });
+  const room = await roomByCode(roomCode);
+  if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+  return roomDto(room, player);
+}
+
 export function createRoom(
   player: PlayerRow,
   variantRaw: string,
@@ -624,10 +1066,14 @@ export function joinRoom(
 export function createCardRoom(
   player: PlayerRow,
   maxPlayers: number,
-  options?: { title?: string; isPublic?: boolean },
+  options?: {
+    title?: string;
+    isPublic?: boolean;
+    gameType?: "uno" | "tienlen" | "ngua" | "xidach" | "baicao";
+  },
 ) {
   return createGameRoom(player, {
-    gameType: "uno",
+    gameType: options?.gameType ?? "uno",
     maxPlayers,
     title: options?.title,
     isPublic: options?.isPublic,
@@ -635,10 +1081,101 @@ export function createCardRoom(
 }
 
 export const joinCardRoom = (player: PlayerRow, code: string) =>
-  joinGameRoom(player, code, "uno");
+  joinGameRoom(player, code);
 export const getCardRoom = getRoomStatus;
-export const startCardRoom = startUnoRoom;
-export const actInCardRoom = actInUnoRoom;
+export async function startCardRoom(player: PlayerRow, code: string) {
+  const room = await roomByCode(code);
+  if (room?.gameType === "tienlen") return startTienLenRoom(player, code);
+  if (room?.gameType === "ngua") return startNguaRoom(player, code);
+  if (room?.gameType === "xidach" || room?.gameType === "baicao") {
+    return startPartyCardRoom(player, code);
+  }
+  return startUnoRoom(player, code);
+}
+
+/** Bắt đầu lại một ván card trong cùng phòng, giữ nguyên mã phòng và ghế. */
+export async function rematchCardRoom(
+  player: PlayerRow,
+  codeRaw: string,
+): Promise<RoomDto> {
+  const code = normalizeRoomCode(codeRaw);
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select()
+      .from(cardRooms)
+      .where(eq(cardRooms.code, code))
+      .limit(1)
+      .for("update");
+    const room = rows[0];
+    if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+    if (!["uno", "tienlen", "ngua", "xidach", "baicao"].includes(room.gameType)) {
+      throw new ApiError(409, "REMATCH_UNSUPPORTED", "Game này chưa hỗ trợ chơi lại trong cùng phòng");
+    }
+    if (room.hostId !== player.id) {
+      throw new ApiError(403, "HOST_ONLY", "Chỉ chủ phòng được bắt đầu ván mới");
+    }
+    if (room.status !== "finished") {
+      throw new ApiError(409, "ROOM_NOT_FINISHED", "Ván hiện tại chưa kết thúc");
+    }
+    const seats = await tx
+      .select()
+      .from(cardRoomPlayers)
+      .where(eq(cardRoomPlayers.roomId, room.id))
+      .orderBy(asc(cardRoomPlayers.seat));
+    if (seats.length < 2) {
+      throw new ApiError(409, "NEED_PLAYERS", "Cần ít nhất 2 người để chơi lại");
+    }
+    const state =
+      room.gameType === "uno"
+        ? createUnoGame(seats.length)
+        : room.gameType === "tienlen"
+          ? createTienLenGame(seats.length)
+          : room.gameType === "ngua"
+            ? createNguaGame()
+            : room.gameType === "xidach"
+              ? createXiDachGame(seats.length)
+              : createBaiCaoGame(seats.length);
+    const now = Date.now();
+    await tx
+      .update(cardRooms)
+      .set({
+        status: "playing",
+        stateJson: state,
+        version: room.version + 1,
+        updatedAt: now,
+        expiresAt: now + ROOM_LIFETIME_MS,
+      })
+      .where(eq(cardRooms.id, room.id));
+  });
+  const room = await roomByCode(code);
+  if (!room) throw new ApiError(404, "ROOM_NOT_FOUND", "Không tìm thấy phòng");
+  return roomDto(room, player);
+}
+
+export type CardRoomAction =
+  | UnoAction
+  | TienLenAction
+  | NguaAction
+  | XiDachAction
+  | BaiCaoAction;
+
+export async function actInCardRoom(
+  player: PlayerRow,
+  code: string,
+  action: CardRoomAction,
+) {
+  const room = await roomByCode(code);
+  if (room?.gameType === "tienlen") {
+    return actInTienLenRoom(player, code, action as TienLenAction);
+  }
+  if (room?.gameType === "ngua") {
+    return actInNguaRoom(player, code, action as NguaAction);
+  }
+  if (room?.gameType === "xidach" || room?.gameType === "baicao") {
+    return actInPartyCardRoom(player, code, action as XiDachAction | BaiCaoAction);
+  }
+  return actInUnoRoom(player, code, action as UnoAction);
+}
 export const leaveCardRoom = leaveRoom;
 
-export const ROOM_GAME_TYPES = ["uno", ...BOARD_GAMES] as const;
+export const ROOM_GAME_TYPES = REGISTRY_ROOM_GAME_TYPES;

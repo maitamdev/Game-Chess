@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { ArrowClockwise } from "@phosphor-icons/react/ArrowClockwise";
 import { Eye } from "@phosphor-icons/react/Eye";
 import PlayingCard from "@/components/cards/PlayingCard";
@@ -51,6 +52,9 @@ export default function BaicaoPage() {
           <ArrowClockwise size={16} aria-hidden />
           Chia lại
         </Button>
+      </div>
+      <div className="mb-5">
+        <Link href="/cards/baicao/rooms" className="text-sm font-semibold text-brass transition hover:text-parchment">Tạo phòng Bài Cào online →</Link>
       </div>
 
       <section className="card-table rounded-[18px] border border-line p-4 sm:p-7">

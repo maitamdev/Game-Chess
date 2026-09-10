@@ -9,6 +9,7 @@ import GameControls from "@/components/game/GameControls";
 import GameOverModal from "@/components/game/GameOverModal";
 import Button from "@/components/ui/Button";
 import SoundToggle from "@/components/ui/SoundToggle";
+import AmbientMusicToggle from "@/components/ui/AmbientMusicToggle";
 import { useGameStore } from "@/stores/gameStore";
 import { useGameDerived, useClockTicker } from "@/lib/useGameDerived";
 import { playMoveSound } from "@/lib/sounds";
@@ -145,7 +146,10 @@ export default function LocalPlayPage() {
               onToggleAutoFlip={(v) => useGameStore.getState().setAutoFlip(v)}
               onNewGame={() => useGameStore.setState({ status: "idle" })}
             />
-            <SoundToggle />
+            <div className="flex items-center gap-1">
+              <AmbientMusicToggle />
+              <SoundToggle />
+            </div>
           </div>
           <MoveList
             moves={moves}
